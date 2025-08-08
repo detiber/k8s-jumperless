@@ -18,14 +18,17 @@ package controller
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	jumperlessv5alpha1 "github.com/detiber/k8s-jumperless/api/v5alpha1"
 )
+
+var ErrNotImplemented = errors.New("not yet implemented")
 
 // JumperlessReconciler reconciles a Jumperless object
 type JumperlessReconciler struct {
@@ -39,19 +42,40 @@ type JumperlessReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Jumperless object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *JumperlessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	log := ctrl.LoggerFrom(ctx)
 
-	// TODO(user): your logic here
+	log.Info("Reconciling Jumperless", "request", req.NamespacedName)
 
-	return ctrl.Result{}, nil
+	// Fetch the Jumperless instance
+	instance := &jumperlessv5alpha1.Jumperless{}
+	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
+		log.Error(err, "unable to fetch Jumperless")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Determine if we are running on localhost or a remote host
+	// and perform the appropriate reconciliation.
+	// If no hostname is specified, default to localhost.
+	switch hostname := instance.Spec.Host.Hostname; hostname {
+	case "":
+		log.Info("No hostname specified, defaulting to localhost")
+		fallthrough
+	case "localhost", "127.0.0.1", "::1":
+		// do local reconciliation
+		log.Info("Reconciling Jumperless locally")
+		return ctrl.Result{}, fmt.Errorf("local reconciliation not implemented: %w", ErrNotImplemented)
+	default:
+		// do remote reconciliation
+		log.Info("Reconciling Jumperless remotely", "hostname", hostname)
+		return ctrl.Result{}, fmt.Errorf("remote reconciliation not implemented: %w", ErrNotImplemented)
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
