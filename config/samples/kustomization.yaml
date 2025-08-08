@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- jumperless_v5alpha1_jumperless.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

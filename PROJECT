@@ -8,4 +8,14 @@ layout:
 - go.kubebuilder.io/v4
 projectName: k8s-jumperless
 repo: github.com/detiber/k8s-jumperless
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: detiber.us
+  group: jumperless
+  kind: Jumperless
+  path: github.com/detiber/k8s-jumperless/api/v5alpha1
+  version: v5alpha1
 version: "3"

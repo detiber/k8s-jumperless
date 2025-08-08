@@ -1,0 +1,9 @@
+apiVersion: jumperless.detiber.us/v5alpha1
+kind: Jumperless
+metadata:
+  labels:
+    app.kubernetes.io/name: k8s-jumperless
+    app.kubernetes.io/managed-by: kustomize
+  name: jumperless-sample
+spec:
+  # TODO(user): Add fields here
