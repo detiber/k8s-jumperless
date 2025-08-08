@@ -47,7 +47,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 .PHONY: gen-go
 gen-go: stringer ## Run go generate to regenerate code after modifying api definitions.
-	go generate ./...
+	PATH=$(LOCALBIN):$(PATH) go generate ./...
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
