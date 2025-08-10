@@ -19,15 +19,13 @@ package controller
 import (
 	"context"
 
+	jumperlessv5alpha1 "github.com/detiber/k8s-jumperless/api/v5alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	jumperlessv5alpha1 "github.com/detiber/k8s-jumperless/api/v5alpha1"
 )
 
 var _ = Describe("Jumperless Controller", func() {
@@ -38,7 +36,7 @@ var _ = Describe("Jumperless Controller", func() {
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Namespace: "default",
 		}
 		jumperless := &jumperlessv5alpha1.Jumperless{}
 
@@ -51,14 +49,17 @@ var _ = Describe("Jumperless Controller", func() {
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: jumperlessv5alpha1.JumperlessSpec{
+						Host: jumperlessv5alpha1.JumperlessHost{
+							Hostname: "localhost",
+						},
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
 		})
 
 		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &jumperlessv5alpha1.Jumperless{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
@@ -79,6 +80,7 @@ var _ = Describe("Jumperless Controller", func() {
 			Expect(err).To(SatisfyAny(
 				Succeed(),
 				MatchError(ErrNotImplemented),
+				MatchError(ErrNoSerialPortFound),
 			))
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.

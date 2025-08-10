@@ -72,14 +72,14 @@ type JumperlessHost struct {
 	Hostname string `json:"hostname"`
 
 	// Username is the username to use when connecting to the host.
-	// +required
-	Username string `json:"username"`
+	// +optional
+	Username *string `json:"username,omitempty"`
 
 	// SSHKeyRef is a reference to a Kubernetes Secret that contains the SSH private key
 	// to use when connecting to the host.
 	// The Secret must contain a key named "ssh-privatekey" with the private key data.
-	// +required
-	SSHKeyRef corev1.SecretReference `json:"sshKeyRef"`
+	// +optional
+	SSHKeyRef *corev1.SecretReference `json:"sshKeyRef,omitempty"`
 }
 
 // JumperlessSpec defines the desired state of Jumperless

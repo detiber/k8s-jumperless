@@ -111,8 +111,6 @@ spec:
                     type: string
                 required:
                 - hostname
-                - sshKeyRef
-                - username
                 type: object
               oled:
                 description: |-
