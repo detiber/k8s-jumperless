@@ -19,7 +19,11 @@
       },
       "extensions": [
         "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "golang.go",
+        "ms-kubernetes-tools.kind-vscode",
+        "ms-vscode.makefile-tools",
+        "github.vscode-github-actions"
       ]
     }
   },
