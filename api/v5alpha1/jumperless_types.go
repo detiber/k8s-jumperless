@@ -112,6 +112,16 @@ type JumperlessStatus struct {
 	// For Kubernetes API conventions, see:
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
 
+	// FirmwareVersion is the version of the Jumperless firmware currently running on the device.
+	// This field is populated by the controller after successfully connecting to the device.
+	// +optional
+	FirmwareVersion *string `json:"firmwareVersion,omitempty"`
+
+	// LocalPort is the name of the local serial port that is connected to the Jumperless device.
+	// This field is populated by the controller after successfully discovering the device.
+	// +optional
+	LocalPort *string `json:"localPort,omitempty"`
+
 	// conditions represent the current state of the Jumperless resource.
 	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
 	//

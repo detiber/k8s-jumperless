@@ -20,9 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
+	"go.bug.st/serial"
 	"go.bug.st/serial/enumerator"
 	"k8s.io/apimachinery/pkg/runtime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -62,8 +67,6 @@ func (r *JumperlessReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	log.Info("Fetched Jumperless instance", "instance", instance)
-
 	// Determine if we are running on localhost or a remote host
 	// and perform the appropriate reconciliation.
 	// If no hostname is specified, default to localhost.
@@ -80,26 +83,131 @@ func (r *JumperlessReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 }
 
-func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, _ *jumperlessv5alpha1.Jumperless) (ctrl.Result, error) {
+func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jumperlessv5alpha1.Jumperless) (ctrl.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	// do local reconciliation
 	log.Info("Reconciling Jumperless locally")
 
-	ports, err := enumerator.GetDetailedPortsList()
+	ports, err := enumerateSerialPorts()
 	if err != nil {
-		log.Error(err, "unable to list serial ports")
-		return ctrl.Result{}, fmt.Errorf("unable to list serial ports: %w", err)
-	}
-	if len(ports) == 0 {
-		log.Error(ErrNoSerialPortFound, "no serial ports found")
-		return ctrl.Result{}, fmt.Errorf("no serial ports found: %w", ErrNoSerialPortFound)
-	}
-	for _, port := range ports {
-		log.Info("Found serial port", "port", port)
+		return ctrl.Result{}, fmt.Errorf("unable to enumerate serial ports: %w", err)
 	}
 
+	port, version, err := findJumperlessPort(ports)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("unable to find Jumperless port: %w", err)
+	}
+
+	if port == nil {
+		return ctrl.Result{}, fmt.Errorf("no Jumperless port found: %w", ErrNoSerialPortFound)
+	}
+
+	log.Info("Found Jumperless", "port", port, "firmwareVersion", version)
+
+	instance.Status.LocalPort = ptr.To(port.Name)
+	instance.Status.FirmwareVersion = ptr.To(version)
+
+	if err := r.Status().Update(ctx, instance); err != nil {
+		log.Error(err, "unable to update Jumperless status")
+		return ctrl.Result{}, fmt.Errorf("unable to update Jumperless status: %w", err)
+	}
+
+	log.Info("Successfully updated Jumperless status", "localPort", instance.Status.LocalPort, "firmwareVersion", instance.Status.FirmwareVersion)
+
 	return ctrl.Result{}, nil
+}
+
+func enumerateSerialPorts() ([]*enumerator.PortDetails, error) {
+	ports, err := enumerator.GetDetailedPortsList()
+	if err != nil {
+		return nil, fmt.Errorf("unable to list serial ports: %w", err)
+	}
+
+	if len(ports) == 0 {
+		return nil, ErrNoSerialPortFound
+	}
+
+	return ports, nil
+}
+
+func findJumperlessPort(ports []*enumerator.PortDetails) (*enumerator.PortDetails, string, error) {
+	errs := []error{}
+
+	for _, port := range ports {
+		// Check if this is a Jumperless port
+		isJumperless, version, err := isJumperlessPort(port.Name)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("unable to determine if port is Jumperless %w", err))
+			continue
+		}
+
+		if isJumperless {
+			return port, version, nil
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, "", kerrors.NewAggregate(errs)
+	}
+
+	return nil, "", nil
+}
+
+func isJumperlessPort(portName string) (bool, string, error) {
+	mode := &serial.Mode{
+		BaudRate: 115200,
+	}
+
+	s, err := serial.Open(portName, mode)
+	if err != nil {
+		return false, "", fmt.Errorf("unable to open serial port %s: %w", portName, err)
+	}
+
+	defer s.Close() //nolint:errcheck
+
+	// Reset input and output buffers to ensure clean state
+	if err := s.ResetInputBuffer(); err != nil {
+		return false, "", fmt.Errorf("unable to reset input buffer: %w", err)
+	}
+
+	if err := s.ResetOutputBuffer(); err != nil {
+		return false, "", fmt.Errorf("unable to reset output buffer: %w", err)
+	}
+
+	if _, err := s.Write([]byte("?")); err != nil {
+		return false, "", fmt.Errorf("unable to write to serial port %s: %w", portName, err)
+	}
+
+	if err := s.Drain(); err != nil {
+		return false, "", fmt.Errorf("failed to drain serial port: %s: %w", portName, err)
+	}
+
+	if err := s.SetReadTimeout(time.Second); err != nil {
+		return false, "", fmt.Errorf("unable to set read timeout on serial port %s: %w", portName, err)
+	}
+
+	buff := make([]byte, 128)
+	n, err := s.Read(buff)
+	if err != nil {
+		return false, "", fmt.Errorf("unable to read from serial port %s: %w", portName, err)
+	}
+
+	// If we read no data, assume this is not a Jumperless port
+	if n == 0 {
+		return false, "", nil
+	}
+
+	result := string(buff[:n])
+
+	// Jumperless responds to "?" with a string containing "Jumperless firmware version:"
+	expectedPrefix := "Jumperless firmware version:"
+	if strings.Contains(result, expectedPrefix) {
+		version := strings.TrimSpace(strings.Replace(result, expectedPrefix, "", 1))
+		return true, version, nil
+	}
+
+	return false, "", nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

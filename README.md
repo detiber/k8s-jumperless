@@ -1,8 +1,10 @@
 # k8s-jumperless
-// TODO(user): Add simple overview of use/purpose
+
+A Kubernetes controller to declaratively manage [Jumperless v5](https://jumperless-docs.readthedocs.io/)
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+A Kubernetes controller to declaratively manage [Jumperless v5](https://jumperless-docs.readthedocs.io/)
 
 ## Getting Started
 

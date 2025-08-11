@@ -197,6 +197,16 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              firmwareVersion:
+                description: |-
+                  FirmwareVersion is the version of the Jumperless firmware currently running on the device.
+                  This field is populated by the controller after successfully connecting to the device.
+                type: string
+              localPort:
+                description: |-
+                  LocalPort is the name of the local serial port that is connected to the Jumperless device.
+                  This field is populated by the controller after successfully discovering the device.
+                type: string
             type: object
         required:
         - spec
