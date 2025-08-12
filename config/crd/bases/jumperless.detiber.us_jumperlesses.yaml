@@ -197,6 +197,41 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              dacs:
+                description: |-
+                  DACS is a list of DAC channel statuses.
+                  Each entry reflects the current voltage setting for a specific channel.
+                  If multiple entries specify the same channel, the last one takes precedence.
+                items:
+                  description: DACStatus defines the status of a single DAC channel.
+                  properties:
+                    channel:
+                      description: |-
+                        Channel is the DAC channel to set.
+                        Valid values are "DAC0", "DAC1", "TOP_RAIL", "BOTTOM_RAIL".
+                      enum:
+                      - DAC0
+                      - DAC1
+                      - TOP_RAIL
+                      - BOTTOM_RAIL
+                      type: string
+                    voltage:
+                      description: |-
+                        Voltage is the desired voltage to set the DAC channel to.
+                        The value is a string representing a quantity, e.g. "3.3V", "0.5V", "-1.2V".
+                        Valid range is from -8V to +8V.
+                        Examples of valid values: "0V", "3.3V", "-1.5V", "7.8V"
+                        Examples of invalid values: "10V", "-9V", "3.33V", "abc"
+                      pattern: ^(-?([0-7](\.[0-9]{1,2})?|8(\.0{1,2})?))V$
+                      type: string
+                  required:
+                  - channel
+                  - voltage
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - channel
+                x-kubernetes-list-type: map
               firmwareVersion:
                 description: |-
                   FirmwareVersion is the version of the Jumperless firmware currently running on the device.

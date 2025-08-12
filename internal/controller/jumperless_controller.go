@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
 	"go.bug.st/serial"
 	"go.bug.st/serial/enumerator"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,6 +37,7 @@ import (
 
 var ErrNotImplemented = errors.New("not yet implemented")
 var ErrNoSerialPortFound = errors.New("no serial port found")
+var ErrUnexpectedCommandOutput = errors.New("unexpected command output format")
 
 // JumperlessReconciler reconciles a Jumperless object
 type JumperlessReconciler struct {
@@ -108,6 +110,26 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 	instance.Status.LocalPort = ptr.To(port.Name)
 	instance.Status.FirmwareVersion = ptr.To(version)
 
+	dacStatus := []jumperlessv5alpha1.DACStatus{}
+	for _, channel := range jumperlessv5alpha1.DACChannels {
+		dacVoltage, err := execCommand(ctx, port.Name, fmt.Sprintf(">dac_get(%d)", channel))
+		if err != nil {
+			log.Error(err, "unable to get DAC voltage", "channel", channel)
+			return ctrl.Result{}, fmt.Errorf("unable to get DAC voltage for channel %s: %w", channel, err)
+		}
+
+		log.Info("Retrieved DAC voltage", "channel", channel, "voltage", dacVoltage)
+
+		// Initialize DAC status for each channel
+		s := jumperlessv5alpha1.DACStatus{
+			Channel: channel.String(),
+			Voltage: strings.TrimSpace(dacVoltage) + "V", // Ensure voltage is suffixed with "V"
+		}
+		dacStatus = append(dacStatus, s)
+	}
+
+	instance.Status.DACS = dacStatus
+
 	if err := r.Status().Update(ctx, instance); err != nil {
 		log.Error(err, "unable to update Jumperless status")
 		return ctrl.Result{}, fmt.Errorf("unable to update Jumperless status: %w", err)
@@ -152,6 +174,80 @@ func findJumperlessPort(ports []*enumerator.PortDetails) (*enumerator.PortDetail
 	}
 
 	return nil, "", nil
+}
+
+func execCommand(ctx context.Context, portName string, command string) (string, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Executing command on Jumperless", "port", portName, "command", command)
+
+	mode := &serial.Mode{
+		BaudRate: 115200,
+	}
+
+	s, err := serial.Open(portName, mode)
+	if err != nil {
+		return "", fmt.Errorf("unable to open serial port %s: %w", portName, err)
+	}
+	defer s.Close() //nolint:errcheck
+
+	// Reset input and output buffers to ensure clean state
+	if err := s.ResetInputBuffer(); err != nil {
+		return "", fmt.Errorf("unable to reset input buffer: %w", err)
+	}
+
+	if err := s.ResetOutputBuffer(); err != nil {
+		return "", fmt.Errorf("unable to reset output buffer: %w", err)
+	}
+
+	if _, err := s.Write([]byte(command)); err != nil {
+		return "", fmt.Errorf("unable to write to serial port %s: %w", portName, err)
+	}
+
+	if err := s.Drain(); err != nil {
+		return "", fmt.Errorf("failed to drain serial port: %s: %w", portName, err)
+	}
+
+	if err := s.SetReadTimeout(time.Second); err != nil {
+		return "", fmt.Errorf("unable to set read timeout on serial port %s: %w", portName, err)
+	}
+
+	result := ""
+
+	buff := make([]byte, 128)
+	for {
+		n, err := s.Read(buff)
+		if err != nil {
+			return "", fmt.Errorf("unable to read from serial port %s: %w", portName, err)
+		}
+
+		if n == 0 {
+			break // No more data to read
+		}
+
+		result += string(buff[:n])
+	}
+
+	result = ansi.Strip(result) // Remove ANSI escape codes
+
+	// Split the output and strip the first and last lines
+	// Example output:
+	// Python> >dac_get(0)\r\n3.3V\r\n
+	// The first line is the command prompt, the last line is empty.
+	// The first line may also contain repeated substrings of the command and prompt
+	// since Jumperless is streaming the prompt back using ANSI escape codes.
+	split := strings.Split(result, "\r\n")
+	if len(split) != 3 {
+		log.Info("Unexpected command output format", "port", portName, "command", command, "result", result, "split", split)
+		return "", fmt.Errorf("unexpected command output format: expected 3 lines, got %d %w", len(split), ErrUnexpectedCommandOutput)
+	}
+
+	result = split[1] // Strip the first and last lines
+
+	log.Info("Command executed", "port", portName, "command", command, "result", result)
+
+	result = strings.TrimPrefix(result, "Python> "+command+"\n") // Remove command prompt prefix
+	return result, nil
 }
 
 func isJumperlessPort(portName string) (bool, string, error) {

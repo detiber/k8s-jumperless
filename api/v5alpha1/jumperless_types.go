@@ -33,6 +33,8 @@ const (
 	BOTTOM_RAIL
 )
 
+var DACChannels = []DACChannel{DAC0, DAC1, TOP_RAIL, BOTTOM_RAIL}
+
 // DAC represents a single DAC channel configuration.
 type DAC struct {
 	// Channel is the DAC channel to set.
@@ -107,6 +109,24 @@ type JumperlessSpec struct {
 	DACS []DAC `json:"dacs,omitempty" patchStrategy:"merge" patchMergeKey:"channel"`
 }
 
+// DACStatus defines the status of a single DAC channel.
+type DACStatus struct {
+	// Channel is the DAC channel to set.
+	// Valid values are "DAC0", "DAC1", "TOP_RAIL", "BOTTOM_RAIL".
+	// +kubebuilder:validation:Enum=DAC0;DAC1;TOP_RAIL;BOTTOM_RAIL
+	// +required
+	Channel string `json:"channel"`
+
+	// Voltage is the desired voltage to set the DAC channel to.
+	// The value is a string representing a quantity, e.g. "3.3V", "0.5V", "-1.2V".
+	// Valid range is from -8V to +8V.
+	// Examples of valid values: "0V", "3.3V", "-1.5V", "7.8V"
+	// Examples of invalid values: "10V", "-9V", "3.33V", "abc"
+	// +kubebuilder:validation:Pattern=`^(-?([0-7](\.[0-9]{1,2})?|8(\.0{1,2})?))V$`
+	// +required
+	Voltage string `json:"voltage"`
+}
+
 // JumperlessStatus defines the observed state of Jumperless.
 type JumperlessStatus struct {
 	// For Kubernetes API conventions, see:
@@ -121,6 +141,16 @@ type JumperlessStatus struct {
 	// This field is populated by the controller after successfully discovering the device.
 	// +optional
 	LocalPort *string `json:"localPort,omitempty"`
+
+	// DACS is a list of DAC channel statuses.
+	// Each entry reflects the current voltage setting for a specific channel.
+	// If multiple entries specify the same channel, the last one takes precedence.
+	// +listType=map
+	// +listMapKey=channel
+	// +patchStrategy=merge
+	// +patchMergeKey=channel
+	// +optional
+	DACS []DACStatus `json:"dacs,omitempty" patchStrategy:"merge" patchMergeKey:"channel"`
 
 	// conditions represent the current state of the Jumperless resource.
 	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
