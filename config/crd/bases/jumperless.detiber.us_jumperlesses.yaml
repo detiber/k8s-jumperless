@@ -112,16 +112,6 @@ spec:
                 required:
                 - hostname
                 type: object
-              oled:
-                description: |-
-                  OLED configures the optional OLED display.
-                  If omitted, the display will be disabled.
-                properties:
-                  enabled:
-                    description: Enabled indicates whether the OLED display should
-                      be enabled.
-                    type: boolean
-                type: object
             required:
             - host
             type: object
@@ -197,6 +187,45 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              config:
+                description: |-
+                  Config is a list of configuration sections on the Jumperless device.
+                  This field is populated by the controller after successfully retrieving the configuration from the device.
+                items:
+                  description: JumperLessConfigSection represents a configuration
+                    section on the Jumperless device.
+                  properties:
+                    entries:
+                      description: Entries is a list of configuration entries in this
+                        section.
+                      items:
+                        description: JumperlessConfigEntry represents a single configuration
+                          entry on the Jumperless device.
+                        properties:
+                          key:
+                            description: Key is the configuration key name.
+                            type: string
+                          value:
+                            description: Value is the configuration value.
+                            type: string
+                        required:
+                        - key
+                        - value
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - key
+                      x-kubernetes-list-type: map
+                    name:
+                      description: Name is the name of the configuration section.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               dacs:
                 description: |-
                   DACS is a list of DAC channel statuses.
@@ -242,6 +271,46 @@ spec:
                   LocalPort is the name of the local serial port that is connected to the Jumperless device.
                   This field is populated by the controller after successfully discovering the device.
                 type: string
+              nets:
+                description: |-
+                  Nets is a list of nets currently configured on the Jumperless device.
+                  This field is populated by the controller after successfully connecting to the device.
+                items:
+                  properties:
+                    index:
+                      description: Index is the index of the net.
+                      format: int32
+                      type: integer
+                    name:
+                      description: Name is the name of the net.
+                      type: string
+                    nodes:
+                      description: |-
+                        Nodes is a list of node identifiers that are part of this net.
+                        Each node identifier is a string that uniquely identifies a node on the Jumperless device.
+                      items:
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: set
+                    voltage:
+                      description: |-
+                        Voltage is the voltage of the net.
+                        The value is a string representing a quantity, e.g. "3.3V", "0.5V", "-1.2V".
+                        Valid range is from -8V to +8V.
+                        Examples of valid values: "0V", "3.3V", "-1.5V", "7.8V"
+                        Examples of invalid values: "10V", "-9V", "3.33V", "abc"
+                      pattern: ^(-?([0-7](\.[0-9]{1,2})?|8(\.0{1,2})?))V$
+                      type: string
+                  required:
+                  - index
+                  - name
+                  - nodes
+                  - voltage
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - index
+                x-kubernetes-list-type: map
             type: object
         required:
         - spec

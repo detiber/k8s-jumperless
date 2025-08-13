@@ -60,13 +60,6 @@ type DAC struct {
 	Save *bool `json:"save,omitempty"`
 }
 
-// OLEDDisplay represents the configuration for the optional OLED display.
-type OLEDDisplay struct {
-	// Enabled indicates whether the OLED display should be enabled.
-	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
-}
-
 // JumperlessHost represents a host that is connected to the Jumperless device.
 type JumperlessHost struct {
 	// Hostname is the hostname or IPAddress of the connected host.
@@ -92,11 +85,6 @@ type JumperlessSpec struct {
 	// Host defines the host that is connected to the Jumperless device.
 	// +required
 	Host JumperlessHost `json:"host"`
-
-	// OLED configures the optional OLED display.
-	// If omitted, the display will be disabled.
-	// +optional
-	OLED *OLEDDisplay `json:"oled,omitempty"`
 
 	// DACS is a list of DAC channel configurations to apply.
 	// Each entry specifies a channel, the desired voltage, and whether to save the setting.
@@ -127,6 +115,58 @@ type DACStatus struct {
 	Voltage string `json:"voltage"`
 }
 
+type Net struct {
+	// Index is the index of the net.
+	// +required
+	Index int32 `json:"index"`
+
+	// Name is the name of the net.
+	// +required
+	Name string `json:"name"`
+
+	// Voltage is the voltage of the net.
+	// The value is a string representing a quantity, e.g. "3.3V", "0.5V", "-1.2V".
+	// Valid range is from -8V to +8V.
+	// Examples of valid values: "0V", "3.3V", "-1.5V", "7.8V"
+	// Examples of invalid values: "10V", "-9V", "3.33V", "abc"
+	// +kubebuilder:validation:Pattern=`^(-?([0-7](\.[0-9]{1,2})?|8(\.0{1,2})?))V$`
+	// +required
+	Voltage string `json:"voltage"`
+
+	// Nodes is a list of node identifiers that are part of this net.
+	// Each node identifier is a string that uniquely identifies a node on the Jumperless device.
+	// +listType=set
+	// +patchStrategy=merge
+	// +required
+	Nodes []string `json:"nodes" patchStrategy:"merge"`
+}
+
+// JumperLessConfigSection represents a configuration section on the Jumperless device.
+type JumperLessConfigSection struct {
+	// Name is the name of the configuration section.
+	// +required
+	Name string `json:"name"`
+
+	// Entries is a list of configuration entries in this section.
+	// +listType=map
+	// +listMapKey=key
+	// +patchStrategy=merge
+	// +patchMergeKey=key
+	// +optional
+	Entries []JumperlessConfigEntry `json:"entries,omitempty" patchStrategy:"merge" patchMergeKey:"key"`
+}
+
+// JumperlessConfigEntry represents a single configuration entry on the Jumperless device.
+type JumperlessConfigEntry struct {
+	// Key is the configuration key name.
+	// +required
+	Key string `json:"key"`
+
+	// Value is the configuration value.
+	// +required
+	Value string `json:"value"`
+}
+
 // JumperlessStatus defines the observed state of Jumperless.
 type JumperlessStatus struct {
 	// For Kubernetes API conventions, see:
@@ -151,6 +191,24 @@ type JumperlessStatus struct {
 	// +patchMergeKey=channel
 	// +optional
 	DACS []DACStatus `json:"dacs,omitempty" patchStrategy:"merge" patchMergeKey:"channel"`
+
+	// Nets is a list of nets currently configured on the Jumperless device.
+	// This field is populated by the controller after successfully connecting to the device.
+	// +listType=map
+	// +listMapKey=index
+	// +patchStrategy=merge
+	// +patchMergeKey=index
+	// +optional
+	Nets []Net `json:"nets,omitempty" patchStrategy:"merge" patchMergeKey:"index"`
+
+	// Config is a list of configuration sections on the Jumperless device.
+	// This field is populated by the controller after successfully retrieving the configuration from the device.
+	// +listType=map
+	// +listMapKey=name
+	// +patchStrategy=merge
+	// +patchMergeKey=name
+	// +optional
+	Config []JumperLessConfigSection `json:"config,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// conditions represent the current state of the Jumperless resource.
 	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
