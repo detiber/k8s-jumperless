@@ -56,7 +56,7 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	ctx, cancel = context.WithCancel(context.TODO())
+	ctx, cancel = context.WithCancel(context.TODO()) //nolint:fatcontext
 
 	var err error
 	err = jumperlessv5alpha1.AddToScheme(scheme.Scheme)

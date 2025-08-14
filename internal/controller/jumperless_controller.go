@@ -69,7 +69,7 @@ func (r *JumperlessReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err) //nolint:wrapcheck
 	}
 
 	// Determine if we are running on localhost or a remote host
@@ -503,6 +503,7 @@ func isJumperlessPort(ctx context.Context, portName string) (bool, string, error
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *JumperlessReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	//nolint:wrapcheck
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&jumperlessv5alpha1.Jumperless{}).
 		Named("jumperless").

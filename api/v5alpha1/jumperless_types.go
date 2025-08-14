@@ -33,7 +33,7 @@ const (
 	BOTTOM_RAIL
 )
 
-var DACChannels = []DACChannel{DAC0, DAC1, TOP_RAIL, BOTTOM_RAIL}
+var DACChannels = []DACChannel{DAC0, DAC1, TOP_RAIL, BOTTOM_RAIL} //nolint:gochecknoglobals
 
 // DAC represents a single DAC channel configuration.
 type DAC struct {
@@ -94,7 +94,7 @@ type JumperlessSpec struct {
 	// +patchStrategy=merge
 	// +patchMergeKey=channel
 	// +optional
-	DACS []DAC `json:"dacs,omitempty" patchStrategy:"merge" patchMergeKey:"channel"`
+	DACS []DAC `json:"dacs,omitempty" patchMergeKey:"channel" patchStrategy:"merge"`
 }
 
 // DACStatus defines the status of a single DAC channel.
@@ -153,7 +153,7 @@ type JumperLessConfigSection struct {
 	// +patchStrategy=merge
 	// +patchMergeKey=key
 	// +optional
-	Entries []JumperlessConfigEntry `json:"entries,omitempty" patchStrategy:"merge" patchMergeKey:"key"`
+	Entries []JumperlessConfigEntry `json:"entries,omitempty" patchMergeKey:"key" patchStrategy:"merge"`
 }
 
 // JumperlessConfigEntry represents a single configuration entry on the Jumperless device.
@@ -190,7 +190,7 @@ type JumperlessStatus struct {
 	// +patchStrategy=merge
 	// +patchMergeKey=channel
 	// +optional
-	DACS []DACStatus `json:"dacs,omitempty" patchStrategy:"merge" patchMergeKey:"channel"`
+	DACS []DACStatus `json:"dacs,omitempty" patchMergeKey:"channel" patchStrategy:"merge"`
 
 	// Nets is a list of nets currently configured on the Jumperless device.
 	// This field is populated by the controller after successfully connecting to the device.
@@ -199,7 +199,7 @@ type JumperlessStatus struct {
 	// +patchStrategy=merge
 	// +patchMergeKey=index
 	// +optional
-	Nets []Net `json:"nets,omitempty" patchStrategy:"merge" patchMergeKey:"index"`
+	Nets []Net `json:"nets,omitempty" patchMergeKey:"index" patchStrategy:"merge"`
 
 	// Config is a list of configuration sections on the Jumperless device.
 	// This field is populated by the controller after successfully retrieving the configuration from the device.
@@ -208,7 +208,7 @@ type JumperlessStatus struct {
 	// +patchStrategy=merge
 	// +patchMergeKey=name
 	// +optional
-	Config []JumperLessConfigSection `json:"config,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+	Config []JumperLessConfigSection `json:"config,omitempty" patchMergeKey:"name" patchStrategy:"merge"`
 
 	// conditions represent the current state of the Jumperless resource.
 	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
@@ -224,7 +224,7 @@ type JumperlessStatus struct {
 	// +patchStrategy=merge
 	// +patchMergeKey=type
 	// +optional
-	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchMergeKey:"type" patchStrategy:"merge"`
 }
 
 // +kubebuilder:object:root=true

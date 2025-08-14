@@ -4,24 +4,65 @@ run:
 linters:
   default: none
   enable:
+    - containedctx
+    - contextcheck
     - copyloopvar
     - dupl
-    - errcheck
+    - durationcheck
     - err113
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - forcetypeassert
     - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecksumtype
     - goconst
     - gocyclo
+    - gocritic
+    - gosec
     - govet
+    - iface
+    - inamedparam
     - ineffassign
+    - intrange
+    - ireturn
     - lll
+    - loggercheck
+    - mirror
     - misspell
     - nakedret
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    # - paralleltest
+    - perfsprint
     - prealloc
+    - predeclared
+    - promlinter
+    - reassign
     - revive
     - staticcheck
+    - tagalign
+    - tagliatelle
+    # - testpackage
+    - thelper
+    - tparallel
     - unconvert
     - unparam
     - unused
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - wrapcheck
   settings:
     revive:
       rules:
@@ -37,6 +78,12 @@ linters:
           - dupl
           - lll
         path: internal/*
+      - linters:
+          - gochecknoglobals
+          - gosec
+          - perfsprint
+          - wrapcheck
+        path: test/*
     paths:
       - third_party$
       - builtin$
