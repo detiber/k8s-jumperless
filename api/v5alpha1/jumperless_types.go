@@ -156,6 +156,21 @@ type JumperLessConfigSection struct {
 	Entries []JumperlessConfigEntry `json:"entries,omitempty" patchMergeKey:"key" patchStrategy:"merge"`
 }
 
+// SetEntry sets or updates a configuration entry by key.
+// If the entry does not exist, it is added.
+func (j *JumperLessConfigSection) SetEntry(key, value string) {
+	for i, entry := range j.Entries {
+		if entry.Key == key {
+			j.Entries[i].Value = value
+			return
+		}
+	}
+	j.Entries = append(j.Entries, JumperlessConfigEntry{
+		Key:   key,
+		Value: value,
+	})
+}
+
 // JumperlessConfigEntry represents a single configuration entry on the Jumperless device.
 type JumperlessConfigEntry struct {
 	// Key is the configuration key name.
@@ -225,6 +240,50 @@ type JumperlessStatus struct {
 	// +patchMergeKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchMergeKey:"type" patchStrategy:"merge"`
+}
+
+// SetConfigEntry sets or updates a configuration entry in a specific section.
+// If the section does not exist, it is created.
+func (s *JumperlessStatus) SetConfigEntry(sectionName, key, value string) {
+	for _, sec := range s.Config {
+		if sec.Name == sectionName {
+			sec.SetEntry(key, value)
+			return
+		}
+	}
+
+	s.Config = append(s.Config, JumperLessConfigSection{
+		Name: sectionName,
+		Entries: []JumperlessConfigEntry{
+			{
+				Key:   key,
+				Value: value,
+			},
+		},
+	})
+}
+
+// UpsertConfig merges or adds configuration sections to the status.
+// Existing sections are updated with new entries, and new sections are appended.
+func (s *JumperlessStatus) UpsertConfig(config []JumperLessConfigSection) {
+	for _, newSection := range config {
+		found := false
+		for i, existingSection := range s.Config {
+			if existingSection.Name == newSection.Name {
+				// Merge entries
+				for _, newEntry := range newSection.Entries {
+					existingSection.SetEntry(newEntry.Key, newEntry.Value)
+				}
+				s.Config[i] = existingSection
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Add new section
+			s.Config = append(s.Config, newSection)
+		}
+	}
 }
 
 // +kubebuilder:object:root=true

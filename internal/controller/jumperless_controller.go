@@ -28,6 +28,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"go.bug.st/serial"
 	"go.bug.st/serial/enumerator"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/utils/ptr"
@@ -110,10 +111,18 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 
 	log.Info("Found Jumperless", "port", port, "firmwareVersion", version)
 
-	instance.ManagedFields = nil // clear managed fields to avoid conflicts
+	// Create a new instance to hold the status update to avoid issues with potential SSA diffs
+	statusInstance := &jumperlessv5alpha1.Jumperless{}
+	statusInstance.SetGroupVersionKind(jumperlessv5alpha1.GroupVersion.WithKind("Jumperless"))
+	statusInstance.SetName(instance.Name)
+	statusInstance.SetNamespace(instance.Namespace)
 
-	instance.Status.LocalPort = ptr.To(port.Name)
-	instance.Status.FirmwareVersion = ptr.To(version)
+	// Deep copy the existing status to the new instance to ensure similar ordering
+	// to appease SSA diffing
+	instance.Status.DeepCopyInto(&statusInstance.Status)
+
+	statusInstance.Status.LocalPort = ptr.To(port.Name)
+	statusInstance.Status.FirmwareVersion = ptr.To(version)
 
 	dacStatus := []jumperlessv5alpha1.DACStatus{}
 	for _, channel := range jumperlessv5alpha1.DACChannels {
@@ -133,7 +142,7 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 		dacStatus = append(dacStatus, s)
 	}
 
-	instance.Status.DACS = dacStatus
+	statusInstance.Status.DACS = dacStatus
 
 	nets, err := getNets(ctx, port.Name)
 	if err != nil {
@@ -141,7 +150,7 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 		return ctrl.Result{}, fmt.Errorf("unable to get nets: %w", err)
 	}
 
-	instance.Status.Nets = nets
+	statusInstance.Status.Nets = nets
 
 	config, err := getConfig(ctx, port.Name)
 	if err != nil {
@@ -149,14 +158,24 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 		return ctrl.Result{}, fmt.Errorf("unable to get Jumperless config: %w", err)
 	}
 
-	instance.Status.Config = config
+	statusInstance.Status.UpsertConfig(config)
 
-	if err := r.Status().Update(ctx, instance); err != nil {
-		log.Error(err, "unable to update Jumperless status")
-		return ctrl.Result{}, fmt.Errorf("unable to update Jumperless status: %w", err)
+	// Convert to unstructured for SSA patch
+	uResource, err := runtime.DefaultUnstructuredConverter.ToUnstructured(statusInstance)
+	if err != nil {
+		log.Error(err, "unable to convert Jumperless status to unstructured")
+		return ctrl.Result{}, fmt.Errorf("unable to convert Jumperless status to unstructured: %w", err)
 	}
 
-	log.Info("Successfully updated Jumperless status", "localPort", instance.Status.LocalPort, "firmwareVersion", instance.Status.FirmwareVersion)
+	u := &unstructured.Unstructured{}
+	u.SetUnstructuredContent(uResource)
+
+	if err := r.Status().Patch(ctx, u, client.Apply, client.ForceOwnership, client.FieldOwner("k8s-jumperless")); err != nil {
+		log.Error(err, "unable to patch Jumperless status")
+		return ctrl.Result{}, fmt.Errorf("unable to patch Jumperless status: %w", err)
+	}
+
+	log.Info("Successfully reconciled Jumperless", "name", instance.Name, "namespace", instance.Namespace)
 
 	return ctrl.Result{}, nil
 }
