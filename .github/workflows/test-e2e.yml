@@ -27,9 +27,7 @@ jobs:
           path: |
             /usr/local/bin/kind
             /tmp/kind-version.txt
-          key: kind-${{ runner.os }}-${{ github.run_number }}
-          restore-keys: |
-            kind-${{ runner.os }}-
+          key: kind-${{ runner.os }}
 
       - name: Install and validate kind version
         run: |
