@@ -10,7 +10,7 @@ A Kubernetes controller to declaratively manage [Jumperless v5](https://jumperle
 - **Arduino Nano compatibility**: Full support for Arduino Nano form factor with UART passthrough and Arduino sketch flashing capabilities
 - **Voltage control**: Set precise voltages (-8V to +8V) on DAC (Digital-to-Analog Converter) channels for power rails and signal generation
 - **Comprehensive I/O**: On-board ADC, current sensing hardware, GPIO, and PWM support for complete circuit control
-- **Development platforms**: Supports both Arduino IDE and MicroPython development environments
+- **Scripting and automation**: Built-in MicroPython interpreter with REPL support for scripting, automation, and extending device functionality
 - **Visual feedback**: Integrated OLED display for status monitoring and device information
 - **Remote management**: Control the device via serial communication for automated testing and configuration
 - **Configuration persistence**: Save and restore circuit configurations and device settings
