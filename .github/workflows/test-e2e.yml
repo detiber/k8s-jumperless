@@ -18,20 +18,51 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Cache kind binary
+      - name: Cache kind binary with version check
+        id: cache-kind
         uses: actions/cache@v4
         with:
-          path: /usr/local/bin/kind
-          key: kind-${{ runner.os }}-latest
+          path: |
+            /usr/local/bin/kind
+            /tmp/kind-version.txt
+          key: kind-${{ runner.os }}-${{ github.run_number }}
           restore-keys: |
             kind-${{ runner.os }}-
 
-      - name: Install the latest version of kind
+      - name: Install and validate kind version
         run: |
-          if [ ! -x /usr/local/bin/kind ]; then
-            curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-            chmod +x ./kind
-            sudo mv ./kind /usr/local/bin/kind
+          NEED_INSTALL=false
+          
+          # First, download the latest version to get its version info
+          echo "Checking latest kind version..."
+          curl -Lo /tmp/kind-latest https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x /tmp/kind-latest
+          LATEST_VERSION=$(/tmp/kind-latest version 2>/dev/null | grep 'kind v' | sed 's/.*kind v\([^ ]*\).*/\1/' || echo "unknown")
+          echo "Latest available version: $LATEST_VERSION"
+          
+          # Check if we have a cached version and if it's current
+          if [ -x /usr/local/bin/kind ] && [ -f /tmp/kind-version.txt ]; then
+            CACHED_VERSION=$(cat /tmp/kind-version.txt 2>/dev/null || echo "unknown")
+            echo "Cached version: $CACHED_VERSION"
+            
+            if [ "$CACHED_VERSION" = "$LATEST_VERSION" ]; then
+              echo "Cached version is up to date, using cached binary"
+              rm -f /tmp/kind-latest
+            else
+              echo "Cached version is outdated (cached: $CACHED_VERSION, latest: $LATEST_VERSION)"
+              NEED_INSTALL=true
+            fi
+          else
+            echo "No valid cached version found"
+            NEED_INSTALL=true
+          fi
+          
+          # Install the latest version if needed
+          if [ "$NEED_INSTALL" = "true" ]; then
+            echo "Installing latest kind version: $LATEST_VERSION"
+            sudo mv /tmp/kind-latest /usr/local/bin/kind
+            echo "$LATEST_VERSION" > /tmp/kind-version.txt
+            echo "Kind binary updated to version $LATEST_VERSION"
           fi
 
       - name: Verify kind installation
