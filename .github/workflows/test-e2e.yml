@@ -41,7 +41,6 @@ jobs:
             sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')
 
           if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
-            echo "Failed to get latest version from GitHub API,"
             echo "Failed to get latest version from GitHub API, fallback to downloading binary"
             curl --fail --max-time 60 -Lo /tmp/kind-latest \
               https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
