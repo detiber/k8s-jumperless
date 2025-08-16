@@ -1,5 +1,5 @@
 # k8s-jumperless
-A Kubernetes operator built with Kubebuilder v4.7.1 that declaratively manages [Jumperless v5](https://jumperless-docs.readthedocs.io/) hardware. This operator provides Custom Resources for managing DAC (Digital-to-Analog Converter) channels and hardware connections through Kubernetes APIs.
+A Kubernetes operator built with Kubebuilder v4.7.1 that declaratively manages [Jumperless v5](https://jumperless-docs.readthedocs.io/) hardware. This operator provides Custom Resources for managing device configuration through Kubernetes APIs.
 
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
@@ -15,8 +15,8 @@ Run these commands in order to set up the development environment:
    - Formats and vets Go code
    - Builds manager binary to `bin/manager`
 3. **Run tests**: `make test` -- takes 40 seconds. NEVER CANCEL. Set timeout to 2+ minutes.
-   - Downloads and sets up envtest binaries for Kubernetes 1.33
-   - Runs unit tests with 25.6% controller coverage
+   - Downloads and sets up the latest release of envtest binaries for latest release of Kubernetes
+   - Runs unit tests
 4. **Run linter**: `make lint` -- takes 4 minutes. NEVER CANCEL. Set timeout to 6+ minutes.
    - Downloads golangci-lint v2.1.6
    - Runs extensive linting with 60+ enabled linters
@@ -26,21 +26,16 @@ Run these commands in order to set up the development environment:
 - **Vet code**: `make vet` -- runs `go vet ./...`  
 - **Generate manifests**: `make manifests` -- regenerates CRDs and RBAC
 - **Generate Go code**: `make gen-go` -- runs `go generate` for type definitions
-- **Build installer**: `make build-installer` -- creates consolidated YAML in `dist/install.yaml`
-  - **Note**: Modifies `config/manager/kustomization.yaml` as side effect (revert after testing)
 
 ### Running the Operator
+- **Install manifests**: `make install` -- installs manifests to Kubernetes cluster
+  - **REQUIRES**: Active Kubernetes cluster connection via kubeconfig
+  - **FAILS**: If no cluster available with error about connection refused
 - **Local development**: `make run` -- starts manager locally
   - **REQUIRES**: Active Kubernetes cluster connection via kubeconfig
   - **FAILS**: If no cluster available with error about KUBERNETES_SERVICE_HOST
 - **Binary execution**: `./bin/manager --help` -- shows available flags
   - Key flags: `--kubeconfig`, `--metrics-bind-address`, `--health-probe-bind-address`
-
-### Docker Operations  
-- **Build image**: `make docker-build IMG=<registry>/k8s-jumperless:tag`
-  - **WARNING**: May fail in environments with certificate/proxy issues
-  - **Alternative**: Use pre-built images or build in different environment
-- **Push image**: `make docker-push IMG=<registry>/k8s-jumperless:tag`
 
 ## Validation
 
@@ -82,8 +77,8 @@ E2E tests require Kind cluster setup but may fail in some environments:
 ## Common Tasks
 
 ### Key File Locations
-- **API definitions**: `api/v5alpha1/jumperless_types.go`
-- **Controller logic**: `internal/controller/jumperless_controller.go`
+- **API definitions**: `api/v5alpha1/`
+- **Controller logic**: `internal/controller/`
 - **Main entry point**: `cmd/main.go`
 - **CRD manifests**: `config/crd/bases/`
 - **Sample resources**: `config/samples/`
@@ -115,18 +110,16 @@ The operator manages `Jumperless` resources with these key fields:
   - `save`: Boolean to persist settings across power cycles
 
 ### Development Tips
-- Always run code generation (`make gen-go`, `make manifests`) after modifying API types
+- Always run code generation (`make generate`, `make gen-go`, `make manifests`) after modifying API types
 - The stringer tool auto-generates string methods for DACChannel enum
 - Controller-gen automatically generates CRD schemas from Go struct tags
 - Use `+kubebuilder:` comment annotations to customize CRD generation
-- Check generated files in `api/v5alpha1/zz_generated.deepcopy.go` after API changes
 
 ### Common Error Scenarios
 - **Build fails**: Run `go mod tidy` first, ensure Go 1.24+ installed
 - **Tests fail**: Check envtest setup, may need different Kubernetes version
 - **Lint fails**: Review `.golangci.yml` for enabled linters, use `make lint-fix` for auto-fixes
-- **Manager won't start**: Ensure valid kubeconfig and cluster connectivity
-- **Docker build fails**: Certificate/proxy issues, try different environment
+- **Manager won't start**: Ensure valid kubeconfig and cluster connectivity, try creating a kind cluster
 - **E2E tests fail**: Kind cluster creation issues, requires working Docker runtime
 
 ### Performance Expectations
