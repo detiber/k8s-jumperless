@@ -1,5 +1,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+EMULATOR_IMG ?= jumperless-emulator:latest
+PROXY_IMG ?= jumperless-proxy:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -109,12 +111,23 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 ##@ Build
 
 .PHONY: build
-build: gen-go manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/main.go
+build: gen-go manifests generate fmt vet $(LOCALBIN) ## Build manager binary.
+	go build -o $(LOCALBIN)/manager ./cmd
+
+.PHONY: build-emulator
+build-emulator: fmt vet $(LOCALBIN) ## Build jumperless emulator binary.
+	go build -C utils/jumperless-emulator -o $(LOCALBIN)/jumperless-emulator ./cmd
+
+.PHONY: build-proxy
+build-proxy: fmt vet $(LOCALBIN) ## Build jumperless proxy binary.
+	go build -C utils/jumperless-proxy -o $(LOCALBIN)/jumperless-proxy ./cmd
+
+.PHONY: build-all
+build-all: build build-emulator build-proxy ## Build all binaries.
 
 .PHONY: run
 run: gen-go manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
+	go run ./cmd
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
@@ -123,9 +136,31 @@ run: gen-go manifests generate fmt vet ## Run a controller from your host.
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build -t ${IMG} .
 
+.PHONY: docker-build-emulator
+docker-build-emulator: ## Build docker image for the emulator.
+	$(CONTAINER_TOOL) build -f Dockerfile.emulator -t ${EMULATOR_IMG} .
+
+.PHONY: docker-build-proxy
+docker-build-proxy: ## Build docker image for the proxy.
+	$(CONTAINER_TOOL) build -f Dockerfile.proxy -t ${PROXY_IMG} .
+
+.PHONY: docker-build-all
+docker-build-all: docker-build docker-build-emulator docker-build-proxy ## Build all docker images.
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
+
+.PHONY: docker-push-emulator
+docker-push-emulator: ## Push docker image for the emulator.
+	$(CONTAINER_TOOL) push ${EMULATOR_IMG}
+
+.PHONY: docker-push-proxy
+docker-push-proxy: ## Push docker image for the proxy.
+	$(CONTAINER_TOOL) push ${PROXY_IMG}
+
+.PHONY: docker-push-all
+docker-push-all: docker-push docker-push-emulator docker-push-proxy ## Push all docker images.
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:

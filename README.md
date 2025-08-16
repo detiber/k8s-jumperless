@@ -24,6 +24,20 @@ This **Kubernetes controller** provides declarative management of Jumperless v5 
 
 For more information about Jumperless v5 hardware, visit the [official documentation](https://jumperless-docs.readthedocs.io/).
 
+## Features
+
+- **Declarative Management**: Define Jumperless device configurations using Kubernetes Custom Resources
+- **Hardware Abstraction**: Manage Jumperless devices through standard Kubernetes APIs
+- **Testing Support**: Built-in emulator and proxy tools for development and CI/CD
+- **Multi-host Support**: Connect to Jumperless devices over SSH or locally
+- **Status Reporting**: Real-time device status and configuration reporting
+
+## Components
+
+- **k8s-jumperless operator**: The main Kubernetes controller
+- **Jumperless emulator**: Virtual device for testing ([docs](docs/emulator-proxy.md))
+- **Jumperless proxy**: Recording proxy for generating test configurations ([docs](docs/emulator-proxy.md))
+
 ## Getting Started
 
 ### Prerequisites
@@ -85,6 +99,56 @@ make uninstall
 ```sh
 make undeploy
 ```
+
+## Development Tools
+
+### Building Emulator and Proxy Tools
+
+Build all binaries including the emulator and proxy:
+
+```sh
+make build-all
+```
+
+Or build individually:
+
+```sh
+make build-emulator  # Build jumperless-emulator
+make build-proxy     # Build jumperless-proxy
+```
+
+### Testing with Emulator
+
+For development and testing without hardware:
+
+```sh
+# Generate and start emulator
+./bin/jumperless-emulator -generate-config examples/emulator-config.yaml
+./bin/jumperless-emulator -config examples/emulator-config.yaml -verbose &
+
+# Run tests
+make test
+
+# Cleanup
+pkill jumperless-emulator
+```
+
+### Recording with Proxy
+
+To record real device interactions for testing:
+
+```sh
+# Start proxy (requires real Jumperless device)
+./bin/jumperless-proxy \
+  -real-port /dev/ttyUSB0 \
+  -virtual-port /tmp/jumperless-proxy \
+  -recording-file recordings/session.yaml \
+  -verbose &
+
+# Use the virtual port for testing, then stop proxy to save recording
+```
+
+See [docs/emulator-proxy.md](docs/emulator-proxy.md) for detailed documentation.
 
 ## Project Distribution
 

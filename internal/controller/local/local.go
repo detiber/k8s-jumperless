@@ -312,7 +312,10 @@ func GetDAC(ctx context.Context, portName string, channel jumperlessv5alpha1.DAC
 		return "", fmt.Errorf("unable to get DAC voltage for channel %s: %w", channel, err)
 	}
 
-	result := strings.TrimSpace(dacVoltage) + "V" // Ensure result is suffixed with "V"
+	result := strings.TrimSpace(dacVoltage)
+	if !strings.HasSuffix(result, "V") {
+		result += "V" // Ensure result is suffixed with "V"
+	}
 
 	return result, nil
 }
