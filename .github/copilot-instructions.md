@@ -43,7 +43,7 @@ Run these commands in order to set up the development environment:
 1. **Build validation**: `make build` -- ensure clean build
 2. **Test validation**: `make test` -- ensure all tests pass  
 3. **Lint validation**: `make lint` -- ensure code style compliance
-4. **Format validation**: `make fmt` && check no changes with `git diff`
+4. **Format validation**: `make fmt` && check no changes with `git diff` (if changes exist, stage and commit them)
 
 ### Manual Testing Scenarios
 After making changes to the operator:
@@ -51,16 +51,16 @@ After making changes to the operator:
 1. **Test CRD generation**: 
    - Run `make manifests`
    - Check `config/crd/bases/jumperless.detiber.us_jumperlesses.yaml` for expected changes
-   - **Note**: kubectl validation requires active cluster connection
+   - **Note**: kubectl validation requires active cluster connection (use Kind if no cluster access)
 
 2. **Test sample resources**:
    - Examine `config/samples/jumperless_v5alpha1_jumperless.yaml`
-   - **Note**: kubectl validation requires active cluster connection
+   - **Note**: kubectl validation requires active cluster connection (use Kind if no cluster access)
 
 3. **Test controller logic**:
    - Review controller tests in `internal/controller/`
    - Add new test cases for new functionality
-   - Ensure test coverage remains above 25%
+   - Ensure test coverage remains above 25% (use `go test -cover ./...` to check coverage)
 
 4. **Test generated code**:
    - Run `make gen-go` to regenerate string methods
@@ -114,9 +114,13 @@ The operator manages `Jumperless` resources with these key fields:
 - The stringer tool auto-generates string methods for DACChannel enum
 - Controller-gen automatically generates CRD schemas from Go struct tags
 - Use `+kubebuilder:` comment annotations to customize CRD generation
+- Check `Makefile` and `go.mod` for current tool versions if build errors occur due to version drift
+
+### CI Integration
+This development workflow mirrors the CI process. CI enforces build, test, and lint validation for all contributions.
 
 ### Common Error Scenarios
-- **Build fails**: Run `go mod tidy` first, ensure Go 1.24+ installed
+- **Build fails**: Run `go mod tidy` first, ensure Go 1.24+ installed (check `go.mod` for current version requirements)
 - **Tests fail**: Check envtest setup, may need different Kubernetes version
 - **Lint fails**: Review `.golangci.yml` for enabled linters, use `make lint-fix` for auto-fixes
 - **Manager won't start**: Ensure valid kubeconfig and cluster connectivity, try creating a kind cluster
