@@ -26,6 +26,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/detiber/k8s-jumperless/internal/controller/local"
 )
 
 var _ = Describe("Jumperless Controller", func() {
@@ -80,7 +82,7 @@ var _ = Describe("Jumperless Controller", func() {
 			Expect(err).To(SatisfyAny(
 				Succeed(),
 				MatchError(ErrNotImplemented),
-				MatchError(ErrNoSerialPortFound),
+				MatchError(local.ErrNoSerialPortFound),
 			))
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.
