@@ -4,6 +4,10 @@ name: E2E Tests
 
 on:
   push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
