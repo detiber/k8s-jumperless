@@ -32,34 +32,51 @@ jobs:
       - name: Install and validate kind version
         run: |
           NEED_INSTALL=false
-          
-          # First, download the latest version to get its version info
-          echo "Checking latest kind version..."
-          curl -Lo /tmp/kind-latest https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-          chmod +x /tmp/kind-latest
-          LATEST_VERSION=$(/tmp/kind-latest version 2>/dev/null | grep 'kind v' | sed 's/.*kind v\([^ ]*\).*/\1/' || echo "unknown")
+
+          # Check the latest release version from GitHub API
+          echo "Checking latest kind release version..."
+          LATEST_VERSION=$(curl -s \
+            https://api.github.com/repos/kubernetes-sigs/kind/releases/latest \
+            | grep '"tag_name":' | \
+            sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')
+
+          if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
+            echo "Failed to get latest version from GitHub API,"
+            echo "fallback to downloading binary"
+            curl -Lo /tmp/kind-latest \
+              https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+            chmod +x /tmp/kind-latest
+            LATEST_VERSION=$(/tmp/kind-latest version 2>/dev/null | \
+              grep 'kind v' | sed 's/.*kind v\([^ ]*\).*/\1/' || echo "unknown")
+            rm -f /tmp/kind-latest
+          fi
+
           echo "Latest available version: $LATEST_VERSION"
-          
+
           # Check if we have a cached version and if it's current
           if [ -x /usr/local/bin/kind ] && [ -f /tmp/kind-version.txt ]; then
-            CACHED_VERSION=$(cat /tmp/kind-version.txt 2>/dev/null || echo "unknown")
+            CACHED_VERSION=$(cat /tmp/kind-version.txt 2>/dev/null || \
+              echo "unknown")
             echo "Cached version: $CACHED_VERSION"
-            
+
             if [ "$CACHED_VERSION" = "$LATEST_VERSION" ]; then
               echo "Cached version is up to date, using cached binary"
-              rm -f /tmp/kind-latest
             else
-              echo "Cached version is outdated (cached: $CACHED_VERSION, latest: $LATEST_VERSION)"
+              echo "Cached version is outdated"
+              echo "  (cached: $CACHED_VERSION, latest: $LATEST_VERSION)"
               NEED_INSTALL=true
             fi
           else
             echo "No valid cached version found"
             NEED_INSTALL=true
           fi
-          
+
           # Install the latest version if needed
           if [ "$NEED_INSTALL" = "true" ]; then
-            echo "Installing latest kind version: $LATEST_VERSION"
+            echo "Downloading and installing kind version: $LATEST_VERSION"
+            curl -Lo /tmp/kind-latest \
+              https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+            chmod +x /tmp/kind-latest
             sudo mv /tmp/kind-latest /usr/local/bin/kind
             echo "$LATEST_VERSION" > /tmp/kind-version.txt
             echo "Kind binary updated to version $LATEST_VERSION"
