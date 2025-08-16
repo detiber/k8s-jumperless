@@ -4,7 +4,22 @@ A Kubernetes controller to declaratively manage [Jumperless v5](https://jumperle
 
 ## Description
 
-A Kubernetes controller to declaratively manage [Jumperless v5](https://jumperless-docs.readthedocs.io/)
+**Jumperless v5** is a programmable electronic prototyping device that replaces traditional breadboards with software-controlled connections. It enables automated circuit prototyping and testing through:
+
+- **Programmable connections**: Create and modify electrical connections between nodes without physical jumper wires
+- **Voltage control**: Set precise voltages (-8V to +8V) on DAC (Digital-to-Analog Converter) channels for power rails and signal generation
+- **Remote management**: Control the device via serial communication for automated testing and configuration
+- **Configuration persistence**: Save and restore circuit configurations and device settings
+
+This **Kubernetes controller** provides declarative management of Jumperless v5 devices, allowing you to:
+
+- Define circuit configurations as Kubernetes resources
+- Manage multiple Jumperless devices across your infrastructure  
+- Set DAC voltages and network connections through YAML manifests
+- Monitor device status and firmware versions
+- Integrate electronic prototyping into your CI/CD pipelines
+
+For more information about Jumperless v5 hardware, visit the [official documentation](https://jumperless-docs.readthedocs.io/).
 
 ## Getting Started
 
