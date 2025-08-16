@@ -37,15 +37,15 @@ jobs:
 
           # Check the latest release version from GitHub API
           echo "Checking latest kind release version..."
-          LATEST_VERSION=$(curl -s \
+          LATEST_VERSION=$(curl --fail --max-time 30 -s \
             https://api.github.com/repos/kubernetes-sigs/kind/releases/latest \
             | grep '"tag_name":' | \
             sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')
 
           if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
             echo "Failed to get latest version from GitHub API,"
-            echo "fallback to downloading binary"
-            curl -Lo /tmp/kind-latest \
+            echo "Failed to get latest version from GitHub API, fallback to downloading binary"
+            curl --fail --max-time 60 -Lo /tmp/kind-latest \
               https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
             chmod +x /tmp/kind-latest
             LATEST_VERSION=$(/tmp/kind-latest version 2>/dev/null | \
@@ -76,7 +76,7 @@ jobs:
           # Install the latest version if needed
           if [ "$NEED_INSTALL" = "true" ]; then
             echo "Downloading and installing kind version: $LATEST_VERSION"
-            curl -Lo /tmp/kind-latest \
+            curl --fail --max-time 60 -Lo /tmp/kind-latest \
               https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
             chmod +x /tmp/kind-latest
             sudo mv /tmp/kind-latest /usr/local/bin/kind
