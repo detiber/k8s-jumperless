@@ -4,7 +4,7 @@ A Kubernetes controller to declaratively manage [Jumperless v5](https://jumperle
 
 ## Description
 
-**Jumperless v5** is a programmable electronic prototyping device that replaces traditional breadboards with software-controlled connections. Built around an **RP2350B microcontroller**, it enables automated circuit prototyping and testing through:
+**Jumperless v5** is a programmable electronic prototyping device built around an **RP2350B microcontroller** that replaces traditional breadboards with software-controlled connections, enabling automated circuit prototyping and testing through:
 
 - **Programmable connections**: Create and modify fully analog electrical connections between nodes using crosspoint matrix switches - no physical jumper wires needed
 - **Arduino Nano compatibility**: Full support for Arduino Nano form factor with UART passthrough and Arduino sketch flashing capabilities
