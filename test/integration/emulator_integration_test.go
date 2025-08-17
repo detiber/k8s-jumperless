@@ -27,7 +27,7 @@ import (
 	"go.bug.st/serial/enumerator"
 
 	"github.com/detiber/k8s-jumperless/internal/controller/local"
-	"github.com/detiber/k8s-jumperless/pkg/emulator"
+	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
 )
 
 func TestEmulatorWithLocalController(t *testing.T) {

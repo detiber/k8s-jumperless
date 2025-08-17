@@ -111,23 +111,23 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 ##@ Build
 
 .PHONY: build
-build: gen-go manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/main.go
+build: gen-go manifests generate fmt vet $(LOCALBIN) ## Build manager binary.
+	go build -o $(LOCALBIN)/manager ./cmd
 
 .PHONY: build-emulator
-build-emulator: fmt vet ## Build jumperless emulator binary.
-	go build -o bin/jumperless-emulator cmd/jumperless-emulator/main.go
+build-emulator: fmt vet $(LOCALBIN) ## Build jumperless emulator binary.
+	go build -C utils/jumperless-emulator -o $(LOCALBIN)/jumperless-emulator ./cmd
 
 .PHONY: build-proxy
-build-proxy: fmt vet ## Build jumperless proxy binary.
-	go build -o bin/jumperless-proxy cmd/jumperless-proxy/main.go
+build-proxy: fmt vet $(LOCALBIN) ## Build jumperless proxy binary.
+	go build -C utils/jumperless-proxy -o $(LOCALBIN)/jumperless-proxy ./cmd
 
 .PHONY: build-all
 build-all: build build-emulator build-proxy ## Build all binaries.
 
 .PHONY: run
 run: gen-go manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
+	go run ./cmd
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.

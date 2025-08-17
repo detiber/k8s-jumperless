@@ -25,7 +25,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/detiber/k8s-jumperless/pkg/proxy"
+	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy"
 )
 
 func main() {

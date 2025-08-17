@@ -109,6 +109,12 @@ func validateConfig(config *Config) error {
 	if config.Serial.Port == "" {
 		config.Serial.Port = "/tmp/jumperless"
 	}
+	if config.Serial.StopBits == 0 {
+		config.Serial.StopBits = 1
+	}
+	if config.Serial.Parity == "" {
+		config.Serial.Parity = "none"
+	}
 
 	// Validate mappings
 	for i := range config.Mappings {

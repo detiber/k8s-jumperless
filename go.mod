@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/charmbracelet/x/ansi v0.10.1
+	github.com/detiber/k8s-jumperless/utils/jumperless-emulator v0.0.0
 	github.com/onsi/ginkgo/v2 v2.24.0
 	github.com/onsi/gomega v1.37.0
 	go.bug.st/serial v1.6.4
@@ -104,3 +105,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/detiber/k8s-jumperless/utils/jumperless-emulator => ./utils/jumperless-emulator

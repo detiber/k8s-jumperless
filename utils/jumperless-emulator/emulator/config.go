@@ -40,6 +40,12 @@ type SerialConfig struct {
 
 	// Buffer size for reading/writing
 	BufferSize int `yaml:"bufferSize" json:"bufferSize"`
+
+	// Stop bits (1 or 2)
+	StopBits int `yaml:"stopBits" json:"stopBits"`
+
+	// Parity (none, odd, even, mark, space)
+	Parity string `yaml:"parity" json:"parity"`
 }
 
 // RequestResponse defines a request pattern and its response
@@ -85,6 +91,8 @@ func DefaultConfig() *Config {
 			Port:       "/tmp/jumperless",
 			BaudRate:   115200,
 			BufferSize: 1024,
+			StopBits:   1,
+			Parity:     "none",
 		},
 		Mappings: []RequestResponse{
 			{

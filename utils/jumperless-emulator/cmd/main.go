@@ -25,7 +25,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/detiber/k8s-jumperless/pkg/emulator"
+	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
 )
 
 func main() {
