@@ -33,8 +33,8 @@ import (
 // Emulator represents a Jumperless device emulator
 type Emulator struct {
 	config   *Config
-	ptmx     *os.File // Master side of pty
-	pts      *os.File // Slave side of pty (optional, for testing)
+	ptmx     *os.File // Primary side of pty
+	pts      *os.File // Secondary side of pty (optional, for testing)
 	logger   *log.Logger
 	shutdown chan struct{}
 }
