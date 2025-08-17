@@ -133,7 +133,7 @@ func FindJumperlessPort(ctx context.Context, ports []*enumerator.PortDetails) (*
 	return nil, "", nil
 }
 
-func parseNets(netsOutput string) ([]jumperlessv5alpha1.Net, error) {
+func ParseNets(netsOutput string) ([]jumperlessv5alpha1.Net, error) {
 	errs := []error{}
 
 	nets := slices.Collect(func(yield func(jumperlessv5alpha1.Net) bool) {
@@ -141,7 +141,7 @@ func parseNets(netsOutput string) ([]jumperlessv5alpha1.Net, error) {
 			trimmed := strings.TrimSpace(line)
 			if trimmed != "" && !strings.HasPrefix(trimmed, "Index") {
 
-				net, err := parseNetLine(trimmed)
+				net, err := ParseNetLine(trimmed)
 				if err != nil {
 					errs = append(errs, fmt.Errorf("unable to parse net line %q: %w", trimmed, err))
 					continue
@@ -157,7 +157,7 @@ func parseNets(netsOutput string) ([]jumperlessv5alpha1.Net, error) {
 	return nets, kerrors.NewAggregate(errs)
 }
 
-func parseNetLine(netLine string) (jumperlessv5alpha1.Net, error) {
+func ParseNetLine(netLine string) (jumperlessv5alpha1.Net, error) {
 	net := jumperlessv5alpha1.Net{}
 
 	// Example net lines:
@@ -208,7 +208,7 @@ func parseNetLine(netLine string) (jumperlessv5alpha1.Net, error) {
 	return net, nil
 }
 
-func parseConfig(configOutput string) ([]jumperlessv5alpha1.JumperLessConfigSection, error) {
+func ParseConfig(configOutput string) ([]jumperlessv5alpha1.JumperLessConfigSection, error) {
 	// Example config output:
 	// ~
 	//
@@ -294,7 +294,7 @@ func GetConfig(ctx context.Context, portName string) ([]jumperlessv5alpha1.Jumpe
 		return nil, fmt.Errorf("unable to get current config: %w", err)
 	}
 
-	return parseConfig(configOutput)
+	return ParseConfig(configOutput)
 }
 
 func GetNets(ctx context.Context, portName string) ([]jumperlessv5alpha1.Net, error) {
@@ -303,7 +303,7 @@ func GetNets(ctx context.Context, portName string) ([]jumperlessv5alpha1.Net, er
 		return nil, fmt.Errorf("unable to print nets: %w", err)
 	}
 
-	return parseNets(netsOutput)
+	return ParseNets(netsOutput)
 }
 
 func GetDAC(ctx context.Context, portName string, channel jumperlessv5alpha1.DACChannel) (string, error) {
