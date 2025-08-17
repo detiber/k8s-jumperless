@@ -42,6 +42,12 @@ type SerialPortConfig struct {
 
 	// Buffer size for reading/writing
 	BufferSize int `yaml:"bufferSize" json:"bufferSize"`
+
+	// Stop bits (1 or 2)
+	StopBits int `yaml:"stopBits" json:"stopBits"`
+
+	// Parity (none, odd, even, mark, space)
+	Parity string `yaml:"parity" json:"parity"`
 }
 
 // RecordingConfig defines recording parameters
@@ -84,11 +90,15 @@ func DefaultConfig() *Config {
 			Port:       "/tmp/jumperless-proxy",
 			BaudRate:   115200,
 			BufferSize: 1024,
+			StopBits:   1,
+			Parity:     "none",
 		},
 		RealPort: SerialPortConfig{
 			Port:       "/dev/ttyUSB0",
 			BaudRate:   115200,
 			BufferSize: 1024,
+			StopBits:   1,
+			Parity:     "none",
 		},
 		Recording: RecordingConfig{
 			Enabled:           true,

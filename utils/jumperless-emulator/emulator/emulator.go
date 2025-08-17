@@ -32,11 +32,12 @@ import (
 
 // Emulator represents a Jumperless device emulator
 type Emulator struct {
-	config   *Config
-	ptmx     *os.File // Primary side of pty
-	pts      *os.File // Secondary side of pty (optional, for testing)
-	logger   *log.Logger
-	shutdown chan struct{}
+	config          *Config
+	ptmx            *os.File // Primary side of pty
+	pts             *os.File // Secondary side of pty (optional, for testing)
+	logger          *log.Logger
+	shutdown        chan struct{}
+	requestCounters map[string]int // Track request counts for sequential responses
 }
 
 // New creates a new emulator instance
@@ -45,22 +46,11 @@ func New(config *Config, logger *log.Logger) (*Emulator, error) {
 		logger = log.New(os.Stdout, "[emulator] ", log.LstdFlags)
 	}
 
-	// Compile regex patterns
-	for i := range config.Mappings {
-		mapping := &config.Mappings[i]
-		if mapping.IsRegex {
-			regex, err := regexp.Compile(mapping.Request)
-			if err != nil {
-				return nil, fmt.Errorf("failed to compile regex pattern %q: %w", mapping.Request, err)
-			}
-			mapping.CompiledRegex = regex
-		}
-	}
-
 	return &Emulator{
-		config:   config,
-		logger:   logger,
-		shutdown: make(chan struct{}),
+		config:          config,
+		logger:          logger,
+		shutdown:        make(chan struct{}),
+		requestCounters: make(map[string]int),
 	}, nil
 }
 
@@ -185,7 +175,7 @@ func (e *Emulator) handleRequests(ctx context.Context) {
 func (e *Emulator) findResponse(request string) *RequestResponse {
 	for _, mapping := range e.config.Mappings {
 		if mapping.IsRegex {
-			if mapping.CompiledRegex != nil && mapping.CompiledRegex.MatchString(request) {
+			if matched, _ := regexp.MatchString(mapping.Request, request); matched {
 				return &mapping
 			}
 		} else {
@@ -199,6 +189,10 @@ func (e *Emulator) findResponse(request string) *RequestResponse {
 
 // sendResponse sends a response with configured delays and chunking
 func (e *Emulator) sendResponse(mapping *RequestResponse, originalRequest string) {
+	// Update request counter for this mapping
+	requestKey := mapping.Request
+	e.requestCounters[requestKey]++
+	
 	// Calculate delay with jitter
 	delay := mapping.ResponseConfig.Delay
 	if mapping.ResponseConfig.JitterMax > 0 {
@@ -211,19 +205,26 @@ func (e *Emulator) sendResponse(mapping *RequestResponse, originalRequest string
 		time.Sleep(delay)
 	}
 
-	// Prepare response (handle regex substitutions)
-	response := mapping.Response
-	if mapping.IsRegex && mapping.CompiledRegex != nil {
-		response = mapping.CompiledRegex.ReplaceAllString(originalRequest, mapping.Response)
+	// Get the appropriate response (handling multiple responses)
+	responseText := mapping.GetResponse(e.requestCounters[requestKey])
+	
+	// Handle regex substitutions
+	if mapping.IsRegex {
+		if regex, err := regexp.Compile(mapping.Request); err == nil {
+			responseText = regex.ReplaceAllString(originalRequest, responseText)
+		}
 	}
+	
+	// Process hardware state updates and placeholders
+	responseText = e.processResponse(responseText, originalRequest)
 
-	e.logger.Printf("Sending response: %q", response)
+	e.logger.Printf("Sending response: %q", responseText)
 
 	// Send response (chunked or all at once)
 	if mapping.ResponseConfig.Chunked && mapping.ResponseConfig.ChunkSize > 0 {
-		e.sendChunkedResponse(response, mapping.ResponseConfig)
+		e.sendChunkedResponse(responseText, mapping.ResponseConfig)
 	} else {
-		e.sendFullResponse(response)
+		e.sendFullResponse(responseText)
 	}
 }
 
@@ -256,4 +257,183 @@ func (e *Emulator) sendChunkedResponse(response string, config ResponseConfig) {
 			time.Sleep(config.ChunkDelay)
 		}
 	}
+}
+
+// processResponse processes the response text, handling hardware state updates and placeholders
+func (e *Emulator) processResponse(response, request string) string {
+	// Handle hardware commands and update state
+	e.processHardwareCommand(request)
+	
+	// Replace placeholders with current hardware state
+	return e.replacePlaceholders(response, request)
+}
+
+// processHardwareCommand processes hardware-related commands and updates internal state
+func (e *Emulator) processHardwareCommand(request string) {
+	// DAC set commands: set_dac(channel, voltage)
+	if matched, _ := regexp.MatchString(`set_dac\((\d+),\s*([+-]?\d*\.?\d+)\)`, request); matched {
+		regex := regexp.MustCompile(`set_dac\((\d+),\s*([+-]?\d*\.?\d+)\)`)
+		matches := regex.FindStringSubmatch(request)
+		if len(matches) >= 3 {
+			channel := matches[1]
+			voltage := parseFloat(matches[2])
+			if voltage >= -8.0 && voltage <= 8.0 {
+				if e.config.Jumperless.DACChannels == nil {
+					e.config.Jumperless.DACChannels = make(map[string]DACChannel)
+				}
+				e.config.Jumperless.DACChannels[channel] = DACChannel{Voltage: voltage}
+				e.logger.Printf("Updated DAC channel %s to %.2fV", channel, voltage)
+			}
+		}
+	}
+	
+	// GPIO set commands: gpio_set(pin, value)
+	if matched, _ := regexp.MatchString(`gpio_set\((\d+),\s*([01])\)`, request); matched {
+		regex := regexp.MustCompile(`gpio_set\((\d+),\s*([01])\)`)
+		matches := regex.FindStringSubmatch(request)
+		if len(matches) >= 3 {
+			pin := matches[1]
+			value := parseInt(matches[2])
+			if e.config.Jumperless.GPIOPins == nil {
+				e.config.Jumperless.GPIOPins = make(map[string]GPIOPin)
+			}
+			currentPin := e.config.Jumperless.GPIOPins[pin]
+			currentPin.Value = value
+			e.config.Jumperless.GPIOPins[pin] = currentPin
+			e.logger.Printf("Updated GPIO pin %s to %d", pin, value)
+		}
+	}
+	
+	// Connection commands: connect(nodeA, nodeB)
+	if matched, _ := regexp.MatchString(`connect\(([^,]+),\s*([^)]+)\)`, request); matched {
+		regex := regexp.MustCompile(`connect\(([^,]+),\s*([^)]+)\)`)
+		matches := regex.FindStringSubmatch(request)
+		if len(matches) >= 3 {
+			nodeA := strings.TrimSpace(matches[1])
+			nodeB := strings.TrimSpace(matches[2])
+			e.addConnection(nodeA, nodeB)
+			e.logger.Printf("Connected nodes %s and %s", nodeA, nodeB)
+		}
+	}
+	
+	// Disconnect commands: disconnect(nodeA, nodeB)
+	if matched, _ := regexp.MatchString(`disconnect\(([^,]+),\s*([^)]+)\)`, request); matched {
+		regex := regexp.MustCompile(`disconnect\(([^,]+),\s*([^)]+)\)`)
+		matches := regex.FindStringSubmatch(request)
+		if len(matches) >= 3 {
+			nodeA := strings.TrimSpace(matches[1])
+			nodeB := strings.TrimSpace(matches[2])
+			e.removeConnection(nodeA, nodeB)
+			e.logger.Printf("Disconnected nodes %s and %s", nodeA, nodeB)
+		}
+	}
+	
+	// Clear all connections: clear()
+	if matched, _ := regexp.MatchString(`clear\(\)`, request); matched {
+		e.config.Jumperless.Connections = []Connection{}
+		e.logger.Printf("Cleared all connections")
+	}
+}
+
+// replacePlaceholders replaces placeholders in response with current hardware state
+func (e *Emulator) replacePlaceholders(response, request string) string {
+	result := response
+	
+	// Replace DAC voltage placeholders: {{dac_voltage:channel}}
+	dacRegex := regexp.MustCompile(`\{\{dac_voltage:(\w+)\}\}`)
+	result = dacRegex.ReplaceAllStringFunc(result, func(match string) string {
+		channel := dacRegex.FindStringSubmatch(match)[1]
+		if dac, exists := e.config.Jumperless.DACChannels[channel]; exists {
+			return fmt.Sprintf("%.2fV", dac.Voltage)
+		}
+		return "0.00V"
+	})
+	
+	// Replace ADC voltage placeholders: {{adc_voltage:channel}}
+	adcRegex := regexp.MustCompile(`\{\{adc_voltage:(\w+)\}\}`)
+	result = adcRegex.ReplaceAllStringFunc(result, func(match string) string {
+		channel := adcRegex.FindStringSubmatch(match)[1]
+		if adc, exists := e.config.Jumperless.ADCChannels[channel]; exists {
+			return fmt.Sprintf("%.2fV", adc.Voltage)
+		}
+		return "0.00V"
+	})
+	
+	// Replace GPIO value placeholders: {{gpio_value:pin}}
+	gpioRegex := regexp.MustCompile(`\{\{gpio_value:(\w+)\}\}`)
+	result = gpioRegex.ReplaceAllStringFunc(result, func(match string) string {
+		pin := gpioRegex.FindStringSubmatch(match)[1]
+		if gpio, exists := e.config.Jumperless.GPIOPins[pin]; exists {
+			return fmt.Sprintf("%d", gpio.Value)
+		}
+		return "0"
+	})
+	
+	// Replace connection status placeholders: {{is_connected:nodeA:nodeB}}
+	connRegex := regexp.MustCompile(`\{\{is_connected:([^:]+):([^}]+)\}\}`)
+	result = connRegex.ReplaceAllStringFunc(result, func(match string) string {
+		matches := connRegex.FindStringSubmatch(match)
+		if len(matches) >= 3 {
+			nodeA := matches[1]
+			nodeB := matches[2]
+			if e.isConnected(nodeA, nodeB) {
+				return "true"
+			}
+		}
+		return "false"
+	})
+	
+	return result
+}
+
+// Helper functions for connection management
+func (e *Emulator) addConnection(nodeA, nodeB string) {
+	// Ensure we don't add duplicate connections
+	for _, conn := range e.config.Jumperless.Connections {
+		if (conn.NodeA == nodeA && conn.NodeB == nodeB) || (conn.NodeA == nodeB && conn.NodeB == nodeA) {
+			return // Already connected
+		}
+	}
+	e.config.Jumperless.Connections = append(e.config.Jumperless.Connections, Connection{
+		NodeA: nodeA,
+		NodeB: nodeB,
+	})
+}
+
+func (e *Emulator) removeConnection(nodeA, nodeB string) {
+	for i, conn := range e.config.Jumperless.Connections {
+		if (conn.NodeA == nodeA && conn.NodeB == nodeB) || (conn.NodeA == nodeB && conn.NodeB == nodeA) {
+			e.config.Jumperless.Connections = append(e.config.Jumperless.Connections[:i], e.config.Jumperless.Connections[i+1:]...)
+			return
+		}
+	}
+}
+
+func (e *Emulator) isConnected(nodeA, nodeB string) bool {
+	for _, conn := range e.config.Jumperless.Connections {
+		if (conn.NodeA == nodeA && conn.NodeB == nodeB) || (conn.NodeA == nodeB && conn.NodeB == nodeA) {
+			return true
+		}
+	}
+	return false
+}
+
+// Helper functions for parsing
+func parseFloat(s string) float64 {
+	if val, err := regexp.MatchString(`^[+-]?\d*\.?\d+$`, s); err == nil && val {
+		// Simple float parsing for demo
+		var result float64
+		fmt.Sscanf(s, "%f", &result)
+		return result
+	}
+	return 0.0
+}
+
+func parseInt(s string) int {
+	if val, err := regexp.MatchString(`^\d+$`, s); err == nil && val {
+		var result int
+		fmt.Sscanf(s, "%d", &result)
+		return result
+	}
+	return 0
 }
