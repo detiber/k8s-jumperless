@@ -55,17 +55,63 @@ gen-go: stringer ## Run go generate to regenerate code after modifying api defin
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+.PHONY: fmt-all
+fmt-all: fmt fmt-emulator fmt-proxy fmt-test
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
+
+.PHONY: fmt-emulator
+fmt-emulator: ## Run go fmt against emulator code.
+	cd utils/jumperless-emulator; go fmt ./...
+
+.PHONY: fmt-proxy
+fmt-proxy: ## Run go fmt against proxy code.
+	cd utils/jumperless-proxy; go fmt ./...
+
+.PHONY: fmt-test
+fmt-test: ## Run go fmt against fully integrated test code.
+	cd utils/test; go fmt ./...
+
+.PHONY: vet-all
+vet-all: vet vet-emulator vet-proxy vet-test
 
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: vet-emulator
+vet-emulator: ## Run go vet against emulator code.
+	cd utils/jumperless-emulator; go vet ./...
+
+.PHONY: vet-proxy
+vet-proxy: ## Run go vet against proxy code.
+	cd utils/jumperless-proxy; go vet ./...
+
+.PHONY: vet-test
+vet-test: ## Run go vet against fully integrated test code.
+	cd utils/test; go vet ./...
+
+.PHONY: test-all
+test-all: test test-emulator test-proxy test-test
+
 .PHONY: test
 test: gen-go manifests generate fmt vet setup-envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+
+.PHONY: test-emulator
+test-emulator: fmt-emulator vet-emulator
+	cd utils/jumperless-emulator; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+
+.PHONY: test-proxy
+test-proxy: fmt-proxy vet-proxy
+	cd utils/jumperless-proxy; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+
+.PHONY: test-test
+test-test: fmt-test vet-test
+	cd utils/test; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+
 
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
 # The default setup assumes Kind is pre-installed and builds/loads the Manager Docker image locally.
@@ -96,13 +142,43 @@ test-e2e: setup-test-e2e gen-go manifests generate fmt vet ## Run the e2e tests.
 cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
+.PHONY: lint-all
+lint-all: lint lint-emulator lint-proxy lint-test
+
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
 
+.PHONY: lint-emulator
+lint-emulator: golangci-lint ## Run golangci-lint linter
+	cd utils/jumperless-emulator; $(GOLANGCI_LINT) run
+
+.PHONY: lint-proxy
+lint-proxy: golangci-lint ## Run golangci-lint linter
+	cd utils/jumperless-proxy; $(GOLANGCI_LINT) run
+
+.PHONY: lint-test
+lint-test: golangci-lint ## Run golangci-lint linter
+	cd utils/test; $(GOLANGCI_LINT) run
+
+.PHONY: lint-fix-all
+lint-fix-all: lint lint-emulator lint-proxy lint-test
+
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
+
+.PHONY: lint-fix-emulator
+lint-fix-emulator: golangci-lint ## Run golangci-lint linter
+	cd utils/jumperless-emulator; $(GOLANGCI_LINT) run --fix
+
+.PHONY: lint-fix-proxy
+lint-fix-proxy: golangci-lint ## Run golangci-lint linter
+	cd utils/jumperless-proxy; $(GOLANGCI_LINT) run --fix
+
+.PHONY: lint-fix-test
+lint-fix-test: golangci-lint ## Run golangci-lint linter
+	cd utils/test; $(GOLANGCI_LINT) run --fix
 
 .PHONY: lint-config
 lint-config: golangci-lint ## Verify golangci-lint linter configuration
