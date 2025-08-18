@@ -1,0 +1,24 @@
+name: Lint Proxy
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'utils/jumperless-proxy/**'
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'utils/jumperless-proxy/**'
+
+jobs:
+  lint-proxy:
+    uses: ./.github/workflows/_lint.yml
+    with:
+      go-version-file: "utils/jumperless-proxy/go.mod"
+      go-cache-dependency-path: "utils/jumperless-proxy/go.sum"
+      lint-working-directory: "utils/jumperless-proxy"

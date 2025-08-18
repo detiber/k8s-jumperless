@@ -129,9 +129,9 @@ func runProxy(cmd *cobra.Command, args []string) error {
 	}
 
 	logger.Printf("Starting Jumperless proxy with config:")
-	logger.Printf("  Virtual port: %s (baud: %d, stopBits: %d, parity: %s)", 
+	logger.Printf("  Virtual port: %s (baud: %d, stopBits: %d, parity: %s)",
 		config.VirtualPort.Port, config.VirtualPort.BaudRate, config.VirtualPort.StopBits, config.VirtualPort.Parity)
-	logger.Printf("  Real port: %s (baud: %d, stopBits: %d, parity: %s)", 
+	logger.Printf("  Real port: %s (baud: %d, stopBits: %d, parity: %s)",
 		config.RealPort.Port, config.RealPort.BaudRate, config.RealPort.StopBits, config.RealPort.Parity)
 	logger.Printf("  Recording: %v (file: %s, format: %s)",
 		config.Recording.Enabled, config.Recording.OutputFile, config.Recording.OutputFormat)

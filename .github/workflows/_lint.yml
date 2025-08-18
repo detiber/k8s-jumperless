@@ -1,0 +1,31 @@
+name: _lint
+
+on:
+  workflow_call:
+    inputs:
+      go-version-file:
+        required: true
+        type: string
+      go-cache-dependency-path:
+        required: true
+        type: string
+      lint-working-directory:
+        required: true
+        type: string
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ inputs.go-version-file }}
+          cache-dependency-path: ${{ inputs.go-cache-dependency-path }}
+          cache: true
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
+          working-directory: ${{ inputs.lint-working-directory }}

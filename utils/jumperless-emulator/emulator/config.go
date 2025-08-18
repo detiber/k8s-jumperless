@@ -126,10 +126,10 @@ type Connection struct {
 
 // Node represents a Jumperless node
 type Node struct {
-	Number    int      `yaml:"number" json:"number"`
-	Constant  string   `yaml:"constant" json:"constant"`
-	Aliases   []string `yaml:"aliases" json:"aliases"`
-	Type      string   `yaml:"type" json:"type"` // "gpio", "dac", "adc", "power", etc.
+	Number   int      `yaml:"number" json:"number"`
+	Constant string   `yaml:"constant" json:"constant"`
+	Aliases  []string `yaml:"aliases" json:"aliases"`
+	Type     string   `yaml:"type" json:"type"` // "gpio", "dac", "adc", "power", etc.
 }
 
 // RequestResponse defines a request pattern and its response(s)
@@ -201,9 +201,9 @@ func DefaultConfig() *Config {
 				ProbeRevision: 5,
 			},
 			DACChannels: map[string]DACChannel{
-				"0":          {Voltage: 3.3},
-				"1":          {Voltage: 0.0},
-				"TOP_RAIL":   {Voltage: 3.5},
+				"0":           {Voltage: 3.3},
+				"1":           {Voltage: 0.0},
+				"TOP_RAIL":    {Voltage: 3.5},
 				"BOTTOM_RAIL": {Voltage: 3.5},
 			},
 			ADCChannels: map[string]ADCChannel{
@@ -230,7 +230,7 @@ func DefaultConfig() *Config {
 				"9": {Value: 0, Direction: "input", Pull: "none"},
 			},
 			Connections: []Connection{},
-			Nodes: createDefaultNodes(),
+			Nodes:       createDefaultNodes(),
 		},
 		Mappings: []RequestResponse{
 			{
@@ -249,16 +249,16 @@ func DefaultConfig() *Config {
 // createDefaultNodes creates the default Jumperless node definitions
 func createDefaultNodes() map[string]Node {
 	nodes := make(map[string]Node)
-	
+
 	// Power nodes
 	nodes["GND"] = Node{Number: 1, Constant: "GND", Type: "power"}
 	nodes["TOP_R"] = Node{Number: 2, Constant: "TOP_R", Aliases: []string{"TOP_RAIL"}, Type: "power"}
 	nodes["BOT_R"] = Node{Number: 3, Constant: "BOT_R", Aliases: []string{"BOTTOM_RAIL"}, Type: "power"}
-	
+
 	// DAC nodes
 	nodes["DAC_0"] = Node{Number: 4, Constant: "DAC_0", Type: "dac"}
 	nodes["DAC_1"] = Node{Number: 5, Constant: "DAC_1", Type: "dac"}
-	
+
 	// GPIO nodes (simplified subset for demo)
 	for i := 0; i < 10; i++ {
 		nodeKey := fmt.Sprintf("GPIO_%d", i)
@@ -268,7 +268,7 @@ func createDefaultNodes() map[string]Node {
 			Type:     "gpio",
 		}
 	}
-	
+
 	return nodes
 }
 
@@ -278,17 +278,17 @@ func (rr *RequestResponse) GetResponse(requestCounter int) string {
 	if rr.Response != "" {
 		return rr.Response
 	}
-	
+
 	// If no responses defined, return empty
 	if len(rr.Responses) == 0 {
 		return ""
 	}
-	
+
 	// Single response option
 	if len(rr.Responses) == 1 {
 		return rr.Responses[0].Response
 	}
-	
+
 	// Multiple responses - use selection mode
 	switch rr.ResponseConfig.SelectionMode {
 	case "sequential":
@@ -326,7 +326,7 @@ func (rr *RequestResponse) getWeightedResponse() string {
 	if len(rr.Responses) == 0 {
 		return ""
 	}
-	
+
 	// Calculate total weight
 	totalWeight := 0
 	for _, resp := range rr.Responses {
@@ -336,15 +336,15 @@ func (rr *RequestResponse) getWeightedResponse() string {
 		}
 		totalWeight += weight
 	}
-	
+
 	if totalWeight == 0 {
 		return rr.getRandomResponse()
 	}
-	
+
 	// Select random point
 	target := rand.Intn(totalWeight)
 	current := 0
-	
+
 	for _, resp := range rr.Responses {
 		weight := resp.Weight
 		if weight <= 0 {
@@ -355,7 +355,7 @@ func (rr *RequestResponse) getWeightedResponse() string {
 			return resp.Response
 		}
 	}
-	
+
 	// Fallback to last response
 	return rr.Responses[len(rr.Responses)-1].Response
 }
@@ -363,19 +363,19 @@ func (rr *RequestResponse) getWeightedResponse() string {
 // LoadConfig loads configuration from file or returns default config
 func LoadConfig(configFile string) (*Config, error) {
 	config := DefaultConfig()
-	
+
 	if configFile == "" {
 		return config, nil
 	}
-	
+
 	// Check if file exists
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		return config, nil
 	}
-	
+
 	v := viper.New()
 	v.SetConfigFile(configFile)
-	
+
 	// Determine config type from file extension
 	ext := strings.ToLower(filepath.Ext(configFile))
 	switch ext {
@@ -388,15 +388,15 @@ func LoadConfig(configFile string) (*Config, error) {
 	default:
 		v.SetConfigType("yaml") // Default to YAML
 	}
-	
+
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
-	
+
 	if err := v.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
@@ -406,10 +406,10 @@ func SaveConfig(config *Config, filename string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
-	
+
 	if err := os.WriteFile(filename, data, 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
-	
+
 	return nil
 }

@@ -192,7 +192,7 @@ func (e *Emulator) sendResponse(mapping *RequestResponse, originalRequest string
 	// Update request counter for this mapping
 	requestKey := mapping.Request
 	e.requestCounters[requestKey]++
-	
+
 	// Calculate delay with jitter
 	delay := mapping.ResponseConfig.Delay
 	if mapping.ResponseConfig.JitterMax > 0 {
@@ -207,14 +207,14 @@ func (e *Emulator) sendResponse(mapping *RequestResponse, originalRequest string
 
 	// Get the appropriate response (handling multiple responses)
 	responseText := mapping.GetResponse(e.requestCounters[requestKey])
-	
+
 	// Handle regex substitutions
 	if mapping.IsRegex {
 		if regex, err := regexp.Compile(mapping.Request); err == nil {
 			responseText = regex.ReplaceAllString(originalRequest, responseText)
 		}
 	}
-	
+
 	// Process hardware state updates and placeholders
 	responseText = e.processResponse(responseText, originalRequest)
 
@@ -263,7 +263,7 @@ func (e *Emulator) sendChunkedResponse(response string, config ResponseConfig) {
 func (e *Emulator) processResponse(response, request string) string {
 	// Handle hardware commands and update state
 	e.processHardwareCommand(request)
-	
+
 	// Replace placeholders with current hardware state
 	return e.replacePlaceholders(response, request)
 }
@@ -286,7 +286,7 @@ func (e *Emulator) processHardwareCommand(request string) {
 			}
 		}
 	}
-	
+
 	// GPIO set commands: gpio_set(pin, value)
 	if matched, _ := regexp.MatchString(`gpio_set\((\d+),\s*([01])\)`, request); matched {
 		regex := regexp.MustCompile(`gpio_set\((\d+),\s*([01])\)`)
@@ -303,7 +303,7 @@ func (e *Emulator) processHardwareCommand(request string) {
 			e.logger.Printf("Updated GPIO pin %s to %d", pin, value)
 		}
 	}
-	
+
 	// Connection commands: connect(nodeA, nodeB)
 	if matched, _ := regexp.MatchString(`connect\(([^,]+),\s*([^)]+)\)`, request); matched {
 		regex := regexp.MustCompile(`connect\(([^,]+),\s*([^)]+)\)`)
@@ -315,7 +315,7 @@ func (e *Emulator) processHardwareCommand(request string) {
 			e.logger.Printf("Connected nodes %s and %s", nodeA, nodeB)
 		}
 	}
-	
+
 	// Disconnect commands: disconnect(nodeA, nodeB)
 	if matched, _ := regexp.MatchString(`disconnect\(([^,]+),\s*([^)]+)\)`, request); matched {
 		regex := regexp.MustCompile(`disconnect\(([^,]+),\s*([^)]+)\)`)
@@ -327,7 +327,7 @@ func (e *Emulator) processHardwareCommand(request string) {
 			e.logger.Printf("Disconnected nodes %s and %s", nodeA, nodeB)
 		}
 	}
-	
+
 	// Clear all connections: clear()
 	if matched, _ := regexp.MatchString(`clear\(\)`, request); matched {
 		e.config.Jumperless.Connections = []Connection{}
@@ -338,7 +338,7 @@ func (e *Emulator) processHardwareCommand(request string) {
 // replacePlaceholders replaces placeholders in response with current hardware state
 func (e *Emulator) replacePlaceholders(response, request string) string {
 	result := response
-	
+
 	// Replace DAC voltage placeholders: {{dac_voltage:channel}}
 	dacRegex := regexp.MustCompile(`\{\{dac_voltage:(\w+)\}\}`)
 	result = dacRegex.ReplaceAllStringFunc(result, func(match string) string {
@@ -348,7 +348,7 @@ func (e *Emulator) replacePlaceholders(response, request string) string {
 		}
 		return "0.00V"
 	})
-	
+
 	// Replace ADC voltage placeholders: {{adc_voltage:channel}}
 	adcRegex := regexp.MustCompile(`\{\{adc_voltage:(\w+)\}\}`)
 	result = adcRegex.ReplaceAllStringFunc(result, func(match string) string {
@@ -358,7 +358,7 @@ func (e *Emulator) replacePlaceholders(response, request string) string {
 		}
 		return "0.00V"
 	})
-	
+
 	// Replace GPIO value placeholders: {{gpio_value:pin}}
 	gpioRegex := regexp.MustCompile(`\{\{gpio_value:(\w+)\}\}`)
 	result = gpioRegex.ReplaceAllStringFunc(result, func(match string) string {
@@ -368,7 +368,7 @@ func (e *Emulator) replacePlaceholders(response, request string) string {
 		}
 		return "0"
 	})
-	
+
 	// Replace connection status placeholders: {{is_connected:nodeA:nodeB}}
 	connRegex := regexp.MustCompile(`\{\{is_connected:([^:]+):([^}]+)\}\}`)
 	result = connRegex.ReplaceAllStringFunc(result, func(match string) string {
@@ -382,7 +382,7 @@ func (e *Emulator) replacePlaceholders(response, request string) string {
 		}
 		return "false"
 	})
-	
+
 	return result
 }
 

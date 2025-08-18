@@ -1,0 +1,25 @@
+name: Proxy Tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'utils/jumperless-proxy/**'
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'utils/jumperless-proxy/**'
+
+jobs:
+  test-proxy:
+    uses: ./.github/workflows/_test.yml
+    with:
+      go-version-file: "utils/jumperless-proxy/go.mod"
+      go-cache-dependency-path: "utils/jumperless-proxy/go.sum"
+      module-working-directory: "utils/jumperless-proxy"
+      target-name: "test-proxy"
