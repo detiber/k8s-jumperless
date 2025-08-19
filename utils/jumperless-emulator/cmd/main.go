@@ -65,11 +65,11 @@ func init() {
 	rootCmd.Flags().String("generate-config", "", "generate default config file and exit")
 
 	// Bind flags to viper
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("serial.port", rootCmd.Flags().Lookup("port"))
-	viper.BindPFlag("serial.baudRate", rootCmd.Flags().Lookup("baud-rate"))
-	viper.BindPFlag("serial.stopBits", rootCmd.Flags().Lookup("stop-bits"))
-	viper.BindPFlag("serial.parity", rootCmd.Flags().Lookup("parity"))
+	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+	_ = viper.BindPFlag("serial.port", rootCmd.Flags().Lookup("port"))
+	_ = viper.BindPFlag("serial.baudRate", rootCmd.Flags().Lookup("baud-rate"))
+	_ = viper.BindPFlag("serial.stopBits", rootCmd.Flags().Lookup("stop-bits"))
+	_ = viper.BindPFlag("serial.parity", rootCmd.Flags().Lookup("parity"))
 }
 
 func initConfig() {
@@ -166,7 +166,7 @@ func loadConfigWithOverrides() (*emulator.Config, error) {
 		var err error
 		config, err = emulator.LoadConfig(viper.ConfigFileUsed())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load config file: %w", err)
 		}
 	}
 

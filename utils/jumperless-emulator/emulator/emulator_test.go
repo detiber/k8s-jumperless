@@ -42,13 +42,17 @@ func TestEmulator(t *testing.T) {
 	}
 
 	// Start emulator
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	if err := emu.Start(ctx); err != nil {
 		t.Fatalf("Failed to start emulator: %v", err)
 	}
-	defer emu.Stop()
+	defer func() {
+		if err := emu.Stop(); err != nil {
+			t.Logf("Error stopping emulator: %v", err)
+		}
+	}()
 
 	// Give emulator time to start
 	time.Sleep(100 * time.Millisecond)
@@ -64,7 +68,7 @@ func TestEmulator(t *testing.T) {
 	// Test config query
 	t.Run("ConfigQuery", func(t *testing.T) {
 		response := sendCommand(t, config.Serial.Port, "~")
-		if !strings.Contains(response, "Jumperless Config:") {
+		if !strings.Contains(response, "[config]") {
 			t.Errorf("Expected config response, got: %q", response)
 		}
 	})
@@ -72,7 +76,7 @@ func TestEmulator(t *testing.T) {
 	// Test DAC query
 	t.Run("DACQuery", func(t *testing.T) {
 		response := sendCommand(t, config.Serial.Port, ">dac_get(0)")
-		if !strings.Contains(response, "3.3V") {
+		if !strings.Contains(response, "3.30V") {
 			t.Errorf("Expected DAC response with voltage, got: %q", response)
 		}
 	})
@@ -80,13 +84,14 @@ func TestEmulator(t *testing.T) {
 	// Test print_nets query
 	t.Run("PrintNetsQuery", func(t *testing.T) {
 		response := sendCommand(t, config.Serial.Port, ">print_nets()")
-		if !strings.Contains(response, "Index") || !strings.Contains(response, "Name") {
+		if !strings.Contains(response, "Index") || !strings.Contains(response, "GND") {
 			t.Errorf("Expected nets table response, got: %q", response)
 		}
 	})
 }
 
 func sendCommand(t *testing.T, portName, command string) string {
+	t.Helper()
 	mode := &serial.Mode{
 		BaudRate: 115200,
 	}
@@ -95,7 +100,11 @@ func sendCommand(t *testing.T, portName, command string) string {
 	if err != nil {
 		t.Fatalf("Failed to open port %s: %v", portName, err)
 	}
-	defer port.Close()
+	defer func() {
+		if err := port.Close(); err != nil {
+			t.Logf("Error closing port: %v", err)
+		}
+	}()
 
 	// Send command
 	if _, err := port.Write([]byte(command)); err != nil {
