@@ -19,13 +19,7 @@ package emulator
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
-
-	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
 // Config represents the emulator configuration
@@ -361,7 +355,7 @@ func (rr *RequestResponse) getRandomResponse() string {
 	if len(rr.Responses) == 0 {
 		return ""
 	}
-	index := rand.Intn(len(rr.Responses))
+	index := rand.Intn(len(rr.Responses)) //nolint:gosec
 	return rr.Responses[index].Response
 }
 
@@ -386,7 +380,7 @@ func (rr *RequestResponse) getWeightedResponse() string {
 	}
 
 	// Select random point
-	target := rand.Intn(totalWeight)
+	target := rand.Intn(totalWeight) //nolint:gosec
 	current := 0
 
 	for _, resp := range rr.Responses {
@@ -402,58 +396,4 @@ func (rr *RequestResponse) getWeightedResponse() string {
 
 	// Fallback to last response
 	return rr.Responses[len(rr.Responses)-1].Response
-}
-
-// LoadConfig loads configuration from file or returns default config
-func LoadConfig(configFile string) (*Config, error) {
-	config := DefaultConfig()
-
-	if configFile == "" {
-		return config, nil
-	}
-
-	// Check if file exists
-	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		return config, nil
-	}
-
-	v := viper.New()
-	v.SetConfigFile(configFile)
-
-	// Determine config type from file extension
-	ext := strings.ToLower(filepath.Ext(configFile))
-	switch ext {
-	case ".yaml", ".yml":
-		v.SetConfigType("yaml")
-	case ".json":
-		v.SetConfigType("json")
-	case ".toml":
-		v.SetConfigType("toml")
-	default:
-		v.SetConfigType("yaml") // Default to YAML
-	}
-
-	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	if err := v.Unmarshal(config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
-	}
-
-	return config, nil
-}
-
-// SaveConfig saves configuration to file
-func SaveConfig(config *Config, filename string) error {
-	data, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(filename, data, 0644); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
-	}
-
-	return nil
 }

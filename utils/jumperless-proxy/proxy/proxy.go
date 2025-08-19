@@ -109,13 +109,19 @@ func (p *Proxy) Stop() error {
 
 	// Close ports
 	if p.ptmx != nil {
-		p.ptmx.Close()
+		if err := p.ptmx.Close(); err != nil {
+			p.logger.Printf("Warning: failed to close ptmx: %v", err)
+		}
 	}
 	if p.pts != nil {
-		p.pts.Close()
+		if err := p.pts.Close(); err != nil {
+			p.logger.Printf("Warning: failed to close pts: %v", err)
+		}
 	}
 	if p.realPort != nil {
-		p.realPort.Close()
+		if err := p.realPort.Close(); err != nil {
+			p.logger.Printf("Warning: failed to close realPort: %v", err)
+		}
 	}
 
 	// Clean up symlink if we created one
@@ -161,7 +167,10 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 			return
 		default:
 			// Set read timeout
-			p.ptmx.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+			if err := p.ptmx.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
+				p.logger.Printf("Error setting read deadline on virtual port: %v", err)
+				continue
+			}
 
 			n, err := p.ptmx.Read(buffer)
 			if err != nil {

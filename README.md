@@ -34,7 +34,7 @@ For more information about Jumperless v5 hardware, visit the [official documenta
 
 ## Components
 
-- **k8s-jumperless operator**: The main Kubernetes controller
+- **k8s-jumperless manager**: The main Kubernetes controller
 - **Jumperless emulator**: Virtual device for testing ([docs](docs/emulator-proxy.md))
 - **Jumperless proxy**: Recording proxy for generating test configurations ([docs](docs/emulator-proxy.md))
 

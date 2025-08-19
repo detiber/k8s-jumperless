@@ -18,107 +18,198 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
 )
 
-var (
-	cfgFile string
-	rootCmd = &cobra.Command{
+const (
+	defaultConfigFile = "jumperless-emulator.yml"
+	cfgConfig         = "config"
+	cfgGenerateConfig = "generate-config"
+	cfgVerbose        = "verbose"
+	cfgSerialPort     = "serial.port"
+	cfgSerialBaudRate = "serial.baud-rate"
+	cfgSerialStopBits = "serial.stop-bits"
+	cfgSerialParity   = "serial.parity"
+)
+
+func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue bool, description string) {
+	flagSet.Bool(key, defaultValue, description)
+	_ = v.BindPFlag(key, flagSet.Lookup(key))
+}
+
+func configStringVar(flagSet *pflag.FlagSet, v *viper.Viper, key, defaultValue, description string) {
+	flagSet.String(key, defaultValue, description)
+	_ = v.BindPFlag(key, flagSet.Lookup(key))
+}
+
+func configIntVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue int, description string) {
+	flagSet.Int(key, defaultValue, description)
+	_ = v.BindPFlag(key, flagSet.Lookup(key))
+}
+
+func configFlags(cmd *cobra.Command, v *viper.Viper) {
+	// General flags
+	cmd.PersistentFlags().String(cfgConfig, "", "config file (default is "+defaultConfigFile+")")
+
+	configBoolVar(
+		cmd.PersistentFlags(), v, cfgVerbose, false, "enable verbose logging",
+	)
+
+	// Serial port flags
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialPort,
+		"",
+		"serial port path (e.g. /dev/ttyUSB0) (overrides config)",
+	)
+
+	configIntVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialBaudRate,
+		0,
+		"baud rate (e.g. 9600) (overrides config)",
+	)
+
+	configIntVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialStopBits,
+		0,
+		"stop bits: 1 or 2 (overrides config)",
+	)
+
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialParity,
+		"",
+		"parity: none, odd, even, mark, space (overrides config)",
+	)
+
+	// Utility flags
+	cmd.Flags().Bool(cfgGenerateConfig, false, "generate default config file and exit")
+}
+
+func main() {
+	v := viper.New()
+
+	// Environment variable support
+	v.SetEnvPrefix("JUMPERLESS_EMULATOR")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	rootCmd := &cobra.Command{
 		Use:   "jumperless-emulator",
 		Short: "Jumperless device emulator",
 		Long: `A virtual Jumperless device that creates a pseudo-terminal (pty) based serial port 
 and responds to commands based on configurable request/response mappings.`,
-		RunE: runEmulator,
-	}
-)
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			configFile, err := cmd.Flags().GetString(cfgConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get config flag: %w", err)
+			}
 
-func main() {
+			if configFile != "" {
+				v.SetConfigFile(configFile)
+			} else {
+				base := filepath.Base(defaultConfigFile)
+				ext := filepath.Ext(base)
+
+				v.AddConfigPath(filepath.Dir(defaultConfigFile))
+				v.SetConfigName(strings.TrimSuffix(base, ext))               // Use file name without extension
+				v.SetConfigType(strings.TrimPrefix(filepath.Ext(base), ".")) // Use file extension as config type
+			}
+
+			// If a config file is found, read it in, we can ignore errors if not found
+			var viperNotFoundErr viper.ConfigFileNotFoundError
+			if err := v.ReadInConfig(); err != nil && !errors.As(err, &viperNotFoundErr) {
+				return fmt.Errorf("error reading config file: %w", err)
+			}
+
+			if v.GetBool(cfgVerbose) {
+				cfgFile := v.ConfigFileUsed()
+				if cfgFile == "" {
+					defaultConfigValues := v.AllSettings()
+					fmt.Fprintf(os.Stderr, "No config file specified, using the default config values: %+v\n", defaultConfigValues)
+				} else {
+					fmt.Fprintf(os.Stderr, "Using config file: %s\n", v.ConfigFileUsed())
+				}
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configFile, err := cmd.Flags().GetString(cfgConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get config flag: %w", err)
+			}
+
+			shouldGenerateConfig, err := cmd.Flags().GetBool(cfgGenerateConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get generate-config flag: %w", err)
+			}
+
+			if shouldGenerateConfig {
+				if err := generateConfig(v, configFile); err != nil {
+					return fmt.Errorf("failed to generate config: %w", err)
+				}
+				return nil
+			}
+
+			return runEmulator(v)
+		},
+	}
+
+	configFlags(rootCmd, v)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+func generateConfig(v *viper.Viper, configFile string) error {
+	// Generate default config file
+	if err := v.SafeWriteConfig(); err != nil {
+		return fmt.Errorf("failed to generate config file: %w", err)
+	}
 
-	// Global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./emulator.yaml)")
-	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose logging")
+	if configFile == "" {
+		configFile = defaultConfigFile
+	}
 
-	// Serial port flags
-	rootCmd.Flags().String("port", "", "serial port path (overrides config)")
-	rootCmd.Flags().Int("baud-rate", 0, "baud rate (overrides config)")
-	rootCmd.Flags().Int("stop-bits", 0, "stop bits: 1 or 2 (overrides config)")
-	rootCmd.Flags().String("parity", "", "parity: none, odd, even, mark, space (overrides config)")
-
-	// Utility flags
-	rootCmd.Flags().String("generate-config", "", "generate default config file and exit")
-
-	// Bind flags to viper
-	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	_ = viper.BindPFlag("serial.port", rootCmd.Flags().Lookup("port"))
-	_ = viper.BindPFlag("serial.baudRate", rootCmd.Flags().Lookup("baud-rate"))
-	_ = viper.BindPFlag("serial.stopBits", rootCmd.Flags().Lookup("stop-bits"))
-	_ = viper.BindPFlag("serial.parity", rootCmd.Flags().Lookup("parity"))
+	fmt.Printf("Generated default config file: %s\n", configFile)
+	return nil
 }
 
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath(".")
-		viper.SetConfigName("emulator")
-		viper.SetConfigType("yaml")
-	}
-
-	// Environment variable support
-	viper.SetEnvPrefix("JUMPERLESS_EMULATOR")
-	viper.AutomaticEnv()
-
-	// If a config file is found, read it in
-	if err := viper.ReadInConfig(); err == nil {
-		if viper.GetBool("verbose") {
-			fmt.Fprintf(os.Stderr, "Using config file: %s\n", viper.ConfigFileUsed())
-		}
-	}
-}
-
-func runEmulator(cmd *cobra.Command, args []string) error {
-	// Handle generate-config flag
-	genConfig, _ := cmd.Flags().GetString("generate-config")
-	if genConfig != "" {
-		config := emulator.DefaultConfig()
-		if err := emulator.SaveConfig(config, genConfig); err != nil {
-			return fmt.Errorf("failed to generate config file: %w", err)
-		}
-		fmt.Printf("Generated default config file: %s\n", genConfig)
-		return nil
-	}
-
+func runEmulator(v *viper.Viper) error {
 	// Setup logger
 	logger := log.New(os.Stdout, "[jumperless-emulator] ", log.LstdFlags)
-	if !viper.GetBool("verbose") {
-		logger.SetOutput(os.Stderr)
+
+	if v.GetBool(cfgVerbose) {
+		config := v.AllSettings()
+		logger.Printf("Starting Jumperless emulator with config: %v", config)
 	}
 
-	// Load configuration
-	config, err := loadConfigWithOverrides()
+	config, err := configFromViper(v)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
-
-	logger.Printf("Starting Jumperless emulator with config: port=%s, baud=%d, stopBits=%d, parity=%s",
-		config.Serial.Port, config.Serial.BaudRate, config.Serial.StopBits, config.Serial.Parity)
 
 	// Create emulator
 	emu, err := emulator.New(config, logger)
@@ -157,31 +248,12 @@ func runEmulator(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func loadConfigWithOverrides() (*emulator.Config, error) {
-	// Start with default config
+// configFromViper
+func configFromViper(v *viper.Viper) (*emulator.Config, error) {
 	config := emulator.DefaultConfig()
 
-	// Load from file if available
-	if viper.ConfigFileUsed() != "" {
-		var err error
-		config, err = emulator.LoadConfig(viper.ConfigFileUsed())
-		if err != nil {
-			return nil, fmt.Errorf("failed to load config file: %w", err)
-		}
-	}
-
-	// Apply command line overrides
-	if viper.IsSet("serial.port") {
-		config.Serial.Port = viper.GetString("serial.port")
-	}
-	if viper.IsSet("serial.baudRate") && viper.GetInt("serial.baudRate") > 0 {
-		config.Serial.BaudRate = viper.GetInt("serial.baudRate")
-	}
-	if viper.IsSet("serial.stopBits") && viper.GetInt("serial.stopBits") > 0 {
-		config.Serial.StopBits = viper.GetInt("serial.stopBits")
-	}
-	if viper.IsSet("serial.parity") {
-		config.Serial.Parity = viper.GetString("serial.parity")
+	if err := v.Unmarshal(config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
 	return config, nil

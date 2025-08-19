@@ -23,64 +23,64 @@ import (
 // Config represents the proxy configuration
 type Config struct {
 	// Virtual serial port configuration (client side)
-	VirtualPort SerialPortConfig `yaml:"virtualPort" json:"virtualPort"`
+	VirtualPort SerialPortConfig `json:"virtualPort" yaml:"virtualPort"`
 
 	// Real serial port configuration (device side)
-	RealPort SerialPortConfig `yaml:"realPort" json:"realPort"`
+	RealPort SerialPortConfig `json:"realPort" yaml:"realPort"`
 
 	// Recording configuration
-	Recording RecordingConfig `yaml:"recording" json:"recording"`
+	Recording RecordingConfig `json:"recording" yaml:"recording"`
 }
 
 // SerialPortConfig defines serial port parameters
 type SerialPortConfig struct {
 	// Port name (e.g., "/dev/ttyUSB0", "/tmp/jumperless-proxy")
-	Port string `yaml:"port" json:"port"`
+	Port string `json:"port" yaml:"port"`
 
 	// Baud rate
-	BaudRate int `yaml:"baudRate" json:"baudRate"`
+	BaudRate int `json:"baudRate" yaml:"baudRate"`
 
 	// Buffer size for reading/writing
-	BufferSize int `yaml:"bufferSize" json:"bufferSize"`
+	BufferSize int `json:"bufferSize" yaml:"bufferSize"`
 
 	// Stop bits (1 or 2)
-	StopBits int `yaml:"stopBits" json:"stopBits"`
+	StopBits int `json:"stopBits" yaml:"stopBits"`
 
 	// Parity (none, odd, even, mark, space)
-	Parity string `yaml:"parity" json:"parity"`
+	Parity string `json:"parity" yaml:"parity"`
 }
 
 // RecordingConfig defines recording parameters
 type RecordingConfig struct {
 	// Enable recording
-	Enabled bool `yaml:"enabled" json:"enabled"`
+	Enabled bool `json:"enabled" yaml:"enabled"`
 
 	// Output file for recorded data
-	OutputFile string `yaml:"outputFile" json:"outputFile"`
+	OutputFile string `json:"outputFile" yaml:"outputFile"`
 
 	// Format for output file (yaml, json, log)
-	OutputFormat string `yaml:"outputFormat" json:"outputFormat"`
+	OutputFormat string `json:"outputFormat" yaml:"outputFormat"`
 
 	// Whether to include timestamps in recording
-	IncludeTimestamps bool `yaml:"includeTimestamps" json:"includeTimestamps"`
+	IncludeTimestamps bool `json:"includeTimestamps" yaml:"includeTimestamps"`
 
 	// Buffer size for recording (0 = unbuffered)
-	BufferSize int `yaml:"bufferSize" json:"bufferSize"`
+	BufferSize int `json:"bufferSize" yaml:"bufferSize"`
 }
 
 // RecordEntry represents a single recorded interaction
 type RecordEntry struct {
-	Timestamp time.Time     `yaml:"timestamp" json:"timestamp"`
-	Direction string        `yaml:"direction" json:"direction"` // "request" or "response"
-	Data      string        `yaml:"data" json:"data"`
-	Duration  time.Duration `yaml:"duration,omitempty" json:"duration,omitempty"` // Response time
+	Timestamp time.Time     `json:"timestamp"          yaml:"timestamp"`
+	Direction string        `json:"direction"          yaml:"direction"` // "request" or "response"
+	Data      string        `json:"data"               yaml:"data"`
+	Duration  time.Duration `json:"duration,omitempty" yaml:"duration,omitempty"` // Response time
 }
 
 // Recording represents a collection of recorded interactions
 type Recording struct {
-	StartTime time.Time     `yaml:"startTime" json:"startTime"`
-	EndTime   time.Time     `yaml:"endTime" json:"endTime"`
-	Entries   []RecordEntry `yaml:"entries" json:"entries"`
+	StartTime time.Time     `json:"startTime" yaml:"startTime"`
+	EndTime   time.Time     `json:"endTime"   yaml:"endTime"`
+	Entries   []RecordEntry `json:"entries"   yaml:"entries"`
 }
 
 // DefaultConfig returns a default proxy configuration

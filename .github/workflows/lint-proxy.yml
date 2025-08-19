@@ -21,4 +21,4 @@ jobs:
     with:
       go-version-file: "utils/jumperless-proxy/go.mod"
       go-cache-dependency-path: "utils/jumperless-proxy/go.sum"
-      lint-working-directory: "utils/jumperless-proxy"
+      module-working-directory: "utils/jumperless-proxy"

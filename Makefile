@@ -43,6 +43,25 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: tidy
+tidy: ## Run go mod tidy to clean up go.mod and go.sum files.
+	go mod tidy
+
+.PHONY: tidy-emulator
+tidy-emulator: ## Run go mod tidy to clean up go.mod and go.sum files.
+	cd utils/jumperless-emulator; go mod tidy
+
+.PHONY: tidy-proxy
+tidy-proxy: ## Run go mod tidy to clean up go.mod and go.sum files.
+	cd utils/jumperless-proxy; go mod tidy
+
+.PHONY: tidy-test
+tidy-test: ## Run go mod tidy to clean up go.mod and go.sum files.
+	cd utils/test; go mod tidy
+
+.PHONY: tidy-all
+tidy-all: tidy tidy-emulator tidy-proxy tidy-test ## Run go mod tidy to clean up go.mod and go.sum files in all directories.
+
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases

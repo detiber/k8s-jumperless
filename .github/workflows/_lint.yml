@@ -1,5 +1,8 @@
 name: _lint
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
@@ -9,7 +12,7 @@ on:
       go-cache-dependency-path:
         required: true
         type: string
-      lint-working-directory:
+      module-working-directory:
         required: true
         type: string
 
@@ -24,8 +27,12 @@ jobs:
           cache-dependency-path: ${{ inputs.go-cache-dependency-path }}
           cache: true
 
+      - name: Tidy
+        working-directory: ${{ inputs.module-working-directory }}
+        run: go mod tidy
+
       - name: Run linter
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.1.6
-          working-directory: ${{ inputs.lint-working-directory }}
+          working-directory: ${{ inputs.module-working-directory }}

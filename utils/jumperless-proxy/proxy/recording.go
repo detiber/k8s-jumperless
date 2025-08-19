@@ -18,6 +18,7 @@ package proxy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,11 +29,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	ErrUnsupportedOutputFormat     = errors.New("unsupported output format (use yaml, json, or log)")
+	ErrUnsupportedConfigFileFormat = errors.New("unsupported config file format (use .yaml, .yml, or .json)")
+)
+
 // saveRecording saves the recorded data to a file
 func (p *Proxy) saveRecording() error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(p.config.Recording.OutputFile)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
 
@@ -53,10 +59,10 @@ func (p *Proxy) saveRecording() error {
 	case "log":
 		data = []byte(p.formatAsLog())
 	default:
-		return fmt.Errorf("unsupported output format: %s (use yaml, json, or log)", p.config.Recording.OutputFormat)
+		return fmt.Errorf("%w: %s", ErrUnsupportedOutputFormat, p.config.Recording.OutputFormat)
 	}
 
-	if err := os.WriteFile(p.config.Recording.OutputFile, data, 0644); err != nil {
+	if err := os.WriteFile(p.config.Recording.OutputFile, data, 0600); err != nil {
 		return fmt.Errorf("failed to write recording file %s: %w", p.config.Recording.OutputFile, err)
 	}
 
@@ -66,7 +72,7 @@ func (p *Proxy) saveRecording() error {
 // formatAsLog formats the recording as a human-readable log
 func (p *Proxy) formatAsLog() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("# Jumperless Proxy Recording\n"))
+	sb.WriteString("# Jumperless Proxy Recording\n")
 	sb.WriteString(fmt.Sprintf("# Start Time: %s\n", p.recording.StartTime.Format(time.RFC3339)))
 	sb.WriteString(fmt.Sprintf("# End Time: %s\n", p.recording.EndTime.Format(time.RFC3339)))
 	sb.WriteString(fmt.Sprintf("# Total Duration: %s\n", p.recording.EndTime.Sub(p.recording.StartTime)))
@@ -183,7 +189,16 @@ func (p *Proxy) SaveEmulatorConfig(filename string) error {
 		return fmt.Errorf("failed to convert recording to emulator config: %w", err)
 	}
 
-	return emulator.SaveConfig(config, filename)
+	data, err := yaml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	if err := os.WriteFile(filename, data, 0600); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
 }
 
 // LoadConfig loads proxy configuration from a file
@@ -211,7 +226,7 @@ func LoadConfig(filename string) (*Config, error) {
 			return nil, fmt.Errorf("failed to parse JSON config: %w", err)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported config file format: %s (use .yaml, .yml, or .json)", ext)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedConfigFileFormat, ext)
 	}
 
 	// Validate and set defaults
@@ -241,16 +256,16 @@ func SaveConfig(config *Config, filename string) error {
 			return fmt.Errorf("failed to marshal config to JSON: %w", err)
 		}
 	default:
-		return fmt.Errorf("unsupported config file format: %s (use .yaml, .yml, or .json)", ext)
+		return fmt.Errorf("%w: %s", ErrUnsupportedConfigFileFormat, ext)
 	}
 
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(filename)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
 
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := os.WriteFile(filename, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file %s: %w", filename, err)
 	}
 

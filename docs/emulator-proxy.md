@@ -1,6 +1,5 @@
 # Jumperless Emulator and Proxy
 
-This directory contains the Jumperless hardware emulator and proxy/recording utilities for testing and development.
 
 ## Overview
 
@@ -169,16 +168,6 @@ docker build -f Dockerfile.emulator -t jumperless-emulator .
 docker build -f Dockerfile.proxy -t jumperless-proxy .
 ```
 
-### Using Docker Compose
-
-```bash
-# Start services
-docker-compose up
-
-# View logs
-docker-compose logs -f jumperless-emulator
-docker-compose logs -f jumperless-proxy
-```
 
 ### Docker Environment Variables
 
@@ -303,17 +292,4 @@ docker run --privileged -v /dev:/dev jumperless-proxy ...
 See the `examples/` directory for:
 - `emulator-config.yaml` - Basic emulator configuration
 - `proxy-config.yaml` - Basic proxy configuration
-- `docker-compose.yaml` - Docker compose setup
 - Various test configurations
-
-## API Compatibility
-
-Both utilities are designed to be fully compatible with the existing `internal/controller/local` package. They implement the same serial communication protocol as the real Jumperless device:
-
-- Firmware version query (`?`)
-- Configuration query (`~`)
-- Python command execution (`>command`)
-- DAC queries (`>dac_get(channel)`)
-- Network listing (`>print_nets()`)
-
-The response formats exactly match the real device output, ensuring seamless integration with existing code.

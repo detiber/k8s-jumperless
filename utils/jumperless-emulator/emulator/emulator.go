@@ -212,7 +212,7 @@ func (e *Emulator) sendResponse(mapping *RequestResponse, originalRequest string
 	// Calculate delay with jitter
 	delay := mapping.ResponseConfig.Delay
 	if mapping.ResponseConfig.JitterMax > 0 {
-		jitter := time.Duration(rand.Int63n(int64(mapping.ResponseConfig.JitterMax)))
+		jitter := time.Duration(rand.Int63n(int64(mapping.ResponseConfig.JitterMax))) //nolint:gosec
 		delay += jitter
 	}
 

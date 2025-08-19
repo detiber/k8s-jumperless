@@ -20,4 +20,4 @@ jobs:
     with:
       go-version-file: "go.mod"
       go-cache-dependency-path: "go.sum"
-      lint-working-directory: ""
+      module-working-directory: ""
