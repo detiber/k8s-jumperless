@@ -21,4 +21,4 @@ jobs:
     with:
       go-version-file: "utils/jumperless-emulator/go.mod"
       go-cache-dependency-path: "utils/jumperless-emulator/go.sum"
-      lint-working-directory: "utils/jumperless-emulator"
+      module-working-directory: "utils/jumperless-emulator"

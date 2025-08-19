@@ -21,4 +21,4 @@ jobs:
     with:
       go-version-file: "utils/test/go.mod"
       go-cache-dependency-path: "utils/test/go.sum"
-      lint-working-directory: "utils/test"
+      module-working-directory: "utils/test"

@@ -18,112 +18,233 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy"
 )
 
-var (
-	cfgFile string
-	rootCmd = &cobra.Command{
+const (
+	defaultConfigFile         = "jumperless-proxy.yml"
+	cfgConfig                 = "config"
+	cfgGenerateConfig         = "generate-config"
+	cfgVerbose                = "verbose"
+	cfgSerialPort             = "serial.port"
+	cfgSerialVirtualPort      = "serial.virtual-port"
+	cfgSerialBaudRate         = "serial.baud-rate"
+	cfgSerialStopBits         = "serial.stop-bits"
+	cfgSerialParity           = "serial.parity"
+	cfgRecordingFile          = "recording.file"
+	cfgRecordingFormat        = "recording.format"
+	cfgDisableRecording       = "recording.disable"
+	cfgGenerateEmulatorConfig = "generate-emulator-config"
+)
+
+func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue bool, description string) {
+	flagSet.Bool(key, defaultValue, description)
+	_ = v.BindPFlag(key, flagSet.Lookup(key))
+}
+
+func configStringVar(flagSet *pflag.FlagSet, v *viper.Viper, key, defaultValue, description string) {
+	flagSet.String(key, defaultValue, description)
+	_ = v.BindPFlag(key, flagSet.Lookup(key))
+}
+
+func configIntVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue int, description string) {
+	flagSet.Int(key, defaultValue, description)
+	_ = v.BindPFlag(key, flagSet.Lookup(key))
+}
+
+func configFlags(cmd *cobra.Command, v *viper.Viper) {
+	// General flags
+	cmd.PersistentFlags().String(cfgConfig, "", "config file (default is "+defaultConfigFile+")")
+
+	configBoolVar(
+		cmd.PersistentFlags(), v, cfgVerbose, false, "enable verbose logging",
+	)
+
+	// Serial port flags
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialPort,
+		"",
+		"serial port path (e.g. /dev/ttyUSB0) (overrides config)",
+	)
+
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialVirtualPort,
+		"",
+		"virtual port path (overrides config)",
+	)
+
+	configIntVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialBaudRate,
+		0,
+		"baud rate (e.g. 9600) (overrides config)",
+	)
+
+	configIntVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialStopBits,
+		0,
+		"stop bits: 1 or 2 (overrides config)",
+	)
+
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgSerialParity,
+		"",
+		"parity: none, odd, even, mark, space (overrides config)",
+	)
+
+	// Recording flags
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgRecordingFile,
+		"",
+		"recording output file (overrides config)",
+	)
+
+	configStringVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgRecordingFormat,
+		"",
+		"recording format: yaml, json, log (overrides config)",
+	)
+
+	configBoolVar(
+		cmd.PersistentFlags(),
+		v,
+		cfgDisableRecording,
+		false,
+		"disable recording",
+	)
+
+	// Utility flags
+	cmd.Flags().Bool(cfgGenerateConfig, false, "generate default config file and exit")
+	cmd.Flags().Bool(cfgGenerateEmulatorConfig, false, "generate emulator config from recording and exit")
+}
+
+func main() {
+	v := viper.New()
+
+	// Environment variable support
+	v.SetEnvPrefix("JUMPERLESS_PROXY")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	rootCmd := &cobra.Command{
 		Use:   "jumperless-proxy",
 		Short: "Jumperless recording proxy",
 		Long: `A recording proxy that sits between applications and real Jumperless hardware 
 to capture communication patterns for emulator configuration generation.`,
-		RunE: runProxy,
-	}
-)
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			configFile, err := cmd.Flags().GetString(cfgConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get config flag: %w", err)
+			}
 
-func main() {
+			if configFile != "" {
+				v.SetConfigFile(configFile)
+			} else {
+				base := filepath.Base(defaultConfigFile)
+				ext := filepath.Ext(base)
+
+				v.AddConfigPath(filepath.Dir(defaultConfigFile))
+				v.SetConfigName(strings.TrimSuffix(base, ext))               // Use file name without extension
+				v.SetConfigType(strings.TrimPrefix(filepath.Ext(base), ".")) // Use file extension as config type
+			}
+
+			// If a config file is found, read it in, we can ignore errors if not found
+			var viperNotFoundErr viper.ConfigFileNotFoundError
+			if err := v.ReadInConfig(); err != nil && !errors.As(err, &viperNotFoundErr) {
+				return fmt.Errorf("error reading config file: %w", err)
+			}
+
+			if v.GetBool(cfgVerbose) {
+				cfgFile := v.ConfigFileUsed()
+				if cfgFile == "" {
+					defaultConfigValues := v.AllSettings()
+					fmt.Fprintf(os.Stderr, "No config file specified, using the default config values: %+v\n", defaultConfigValues)
+				} else {
+					fmt.Fprintf(os.Stderr, "Using config file: %s\n", v.ConfigFileUsed())
+				}
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configFile, err := cmd.Flags().GetString(cfgConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get config flag: %w", err)
+			}
+
+			shouldGenerateConfig, err := cmd.Flags().GetBool(cfgGenerateConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get generate-config flag: %w", err)
+			}
+
+			if shouldGenerateConfig {
+				if err := generateConfig(v, configFile); err != nil {
+					return fmt.Errorf("failed to generate config: %w", err)
+				}
+				return nil
+			}
+
+			return runProxy(v, cmd)
+		},
+	}
+
+	configFlags(rootCmd, v)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+func generateConfig(v *viper.Viper, configFile string) error {
+	// Generate default config file
+	if err := v.SafeWriteConfig(); err != nil {
+		return fmt.Errorf("failed to generate config file: %w", err)
+	}
 
-	// Global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./proxy.yaml)")
-	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose logging")
+	if configFile == "" {
+		configFile = defaultConfigFile
+	}
 
-	// Port configuration flags
-	rootCmd.Flags().String("virtual-port", "", "virtual port path (overrides config)")
-	rootCmd.Flags().String("real-port", "", "real port path (overrides config)")
-	rootCmd.Flags().Int("baud-rate", 0, "baud rate for both ports (overrides config)")
-	rootCmd.Flags().Int("stop-bits", 0, "stop bits: 1 or 2 (overrides config)")
-	rootCmd.Flags().String("parity", "", "parity: none, odd, even, mark, space (overrides config)")
-
-	// Recording flags
-	rootCmd.Flags().String("recording-file", "", "recording output file (overrides config)")
-	rootCmd.Flags().String("recording-format", "", "recording format: yaml, json, log (overrides config)")
-	rootCmd.Flags().Bool("disable-recording", false, "disable recording")
-
-	// Utility flags
-	rootCmd.Flags().String("generate-config", "", "generate default config file and exit")
-	rootCmd.Flags().String("generate-emulator-config", "", "generate emulator config from recording and exit")
-
-	// Bind flags to viper
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("virtualPort.port", rootCmd.Flags().Lookup("virtual-port"))
-	viper.BindPFlag("realPort.port", rootCmd.Flags().Lookup("real-port"))
-	viper.BindPFlag("baudRate", rootCmd.Flags().Lookup("baud-rate"))
-	viper.BindPFlag("stopBits", rootCmd.Flags().Lookup("stop-bits"))
-	viper.BindPFlag("parity", rootCmd.Flags().Lookup("parity"))
-	viper.BindPFlag("recording.outputFile", rootCmd.Flags().Lookup("recording-file"))
-	viper.BindPFlag("recording.outputFormat", rootCmd.Flags().Lookup("recording-format"))
-	viper.BindPFlag("recording.enabled", rootCmd.Flags().Lookup("disable-recording"))
+	fmt.Printf("Generated default config file: %s\n", configFile)
+	return nil
 }
 
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath(".")
-		viper.SetConfigName("proxy")
-		viper.SetConfigType("yaml")
-	}
-
-	// Environment variable support
-	viper.SetEnvPrefix("JUMPERLESS_PROXY")
-	viper.AutomaticEnv()
-
-	// If a config file is found, read it in
-	if err := viper.ReadInConfig(); err == nil {
-		if viper.GetBool("verbose") {
-			fmt.Fprintf(os.Stderr, "Using config file: %s\n", viper.ConfigFileUsed())
-		}
-	}
-}
-
-func runProxy(cmd *cobra.Command, args []string) error {
-	// Handle generate-config flag
-	genConfig, _ := cmd.Flags().GetString("generate-config")
-	if genConfig != "" {
-		config := proxy.DefaultConfig()
-		if err := proxy.SaveConfig(config, genConfig); err != nil {
-			return fmt.Errorf("failed to generate config file: %w", err)
-		}
-		fmt.Printf("Generated default config file: %s\n", genConfig)
-		return nil
-	}
-
+func runProxy(v *viper.Viper, cmd *cobra.Command) error {
 	// Setup logger
 	logger := log.New(os.Stdout, "[jumperless-proxy] ", log.LstdFlags)
-	if !viper.GetBool("verbose") {
+	if !v.GetBool("verbose") {
 		logger.SetOutput(os.Stderr)
 	}
 
 	// Load configuration
-	config, err := loadConfigWithOverrides()
+	config, err := loadConfigWithOverrides(v)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
@@ -186,47 +307,47 @@ func runProxy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func loadConfigWithOverrides() (*proxy.Config, error) {
+func loadConfigWithOverrides(v *viper.Viper) (*proxy.Config, error) {
 	// Start with default config
 	config := proxy.DefaultConfig()
 
 	// Load from file if available
-	if viper.ConfigFileUsed() != "" {
+	if v.ConfigFileUsed() != "" {
 		var err error
-		config, err = proxy.LoadConfig(viper.ConfigFileUsed())
+		config, err = proxy.LoadConfig(v.ConfigFileUsed())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load proxy config from file %s: %w", v.ConfigFileUsed(), err)
 		}
 	}
 
 	// Apply command line overrides
-	if viper.IsSet("virtualPort.port") {
-		config.VirtualPort.Port = viper.GetString("virtualPort.port")
+	if v.IsSet(cfgSerialVirtualPort) {
+		config.VirtualPort.Port = v.GetString(cfgSerialVirtualPort)
 	}
-	if viper.IsSet("realPort.port") {
-		config.RealPort.Port = viper.GetString("realPort.port")
+	if v.IsSet(cfgSerialPort) {
+		config.RealPort.Port = v.GetString(cfgSerialPort)
 	}
-	if viper.IsSet("baudRate") && viper.GetInt("baudRate") > 0 {
-		config.VirtualPort.BaudRate = viper.GetInt("baudRate")
-		config.RealPort.BaudRate = viper.GetInt("baudRate")
+	if v.IsSet(cfgSerialBaudRate) && v.GetInt(cfgSerialBaudRate) > 0 {
+		config.VirtualPort.BaudRate = v.GetInt(cfgSerialBaudRate)
+		config.RealPort.BaudRate = v.GetInt(cfgSerialBaudRate)
 	}
-	if viper.IsSet("stopBits") && viper.GetInt("stopBits") > 0 {
-		config.VirtualPort.StopBits = viper.GetInt("stopBits")
-		config.RealPort.StopBits = viper.GetInt("stopBits")
+	if v.IsSet(cfgSerialStopBits) && v.GetInt(cfgSerialStopBits) > 0 {
+		config.VirtualPort.StopBits = v.GetInt(cfgSerialStopBits)
+		config.RealPort.StopBits = v.GetInt(cfgSerialStopBits)
 	}
-	if viper.IsSet("parity") {
-		config.VirtualPort.Parity = viper.GetString("parity")
-		config.RealPort.Parity = viper.GetString("parity")
+	if v.IsSet(cfgSerialParity) {
+		config.VirtualPort.Parity = v.GetString(cfgSerialParity)
+		config.RealPort.Parity = v.GetString(cfgSerialParity)
 	}
-	if viper.IsSet("recording.outputFile") {
-		config.Recording.OutputFile = viper.GetString("recording.outputFile")
+	if v.IsSet(cfgRecordingFile) {
+		config.Recording.OutputFile = v.GetString(cfgRecordingFile)
 	}
-	if viper.IsSet("recording.outputFormat") {
-		config.Recording.OutputFormat = viper.GetString("recording.outputFormat")
+	if v.IsSet(cfgRecordingFormat) {
+		config.Recording.OutputFormat = v.GetString(cfgRecordingFormat)
 	}
-	if viper.IsSet("recording.enabled") {
+	if v.IsSet(cfgDisableRecording) {
 		// Note: disable-recording flag inverts the logic
-		config.Recording.Enabled = !viper.GetBool("recording.enabled")
+		config.Recording.Enabled = !v.GetBool(cfgDisableRecording)
 	}
 
 	return config, nil

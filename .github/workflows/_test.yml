@@ -1,5 +1,7 @@
-
 name: _test
+
+permissions:
+  contents: read
 
 on:
   workflow_call:
