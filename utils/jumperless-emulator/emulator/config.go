@@ -31,156 +31,156 @@ import (
 // Config represents the emulator configuration
 type Config struct {
 	// Serial port configuration
-	Serial SerialConfig `yaml:"serial" json:"serial"`
+	Serial SerialConfig `json:"serial" yaml:"serial"`
 
 	// Jumperless device configuration
-	Jumperless JumperlessConfig `yaml:"jumperless" json:"jumperless"`
+	Jumperless JumperlessConfig `json:"jumperless" yaml:"jumperless"`
 
 	// Request/response mappings
-	Mappings []RequestResponse `yaml:"mappings" json:"mappings"`
+	Mappings []RequestResponse `json:"mappings" yaml:"mappings"`
 }
 
 // SerialConfig defines serial port parameters
 type SerialConfig struct {
 	// Port name (e.g., "/dev/ttyS0", "/tmp/jumperless")
-	Port string `yaml:"port" json:"port"`
+	Port string `json:"port" yaml:"port"`
 
 	// Baud rate
-	BaudRate int `yaml:"baudRate" json:"baudRate"`
+	BaudRate int `json:"baudRate" yaml:"baudRate"`
 
 	// Buffer size for reading/writing
-	BufferSize int `yaml:"bufferSize" json:"bufferSize"`
+	BufferSize int `json:"bufferSize" yaml:"bufferSize"`
 
 	// Stop bits (1 or 2)
-	StopBits int `yaml:"stopBits" json:"stopBits"`
+	StopBits int `json:"stopBits" yaml:"stopBits"`
 
 	// Parity (none, odd, even, mark, space)
-	Parity string `yaml:"parity" json:"parity"`
+	Parity string `json:"parity" yaml:"parity"`
 }
 
 // JumperlessConfig represents the internal Jumperless device state
 type JumperlessConfig struct {
 	// Firmware version
-	FirmwareVersion string `yaml:"firmwareVersion" json:"firmwareVersion"`
+	FirmwareVersion string `json:"firmwareVersion" yaml:"firmwareVersion"`
 
 	// Hardware configuration
-	Hardware HardwareConfig `yaml:"hardware" json:"hardware"`
+	Hardware HardwareConfig `json:"hardware" yaml:"hardware"`
 
 	// DAC channels (4 channels: 0, 1, TOP_RAIL, BOTTOM_RAIL)
-	DACChannels map[string]DACChannel `yaml:"dacChannels" json:"dacChannels"`
+	DACChannels map[string]DACChannel `json:"dacChannels" yaml:"dacChannels"`
 
 	// ADC channels (5 channels: 0-4)
-	ADCChannels map[string]ADCChannel `yaml:"adcChannels" json:"adcChannels"`
+	ADCChannels map[string]ADCChannel `json:"adcChannels" yaml:"adcChannels"`
 
 	// INA sensors (2 sensors)
-	INASensors map[string]INASensor `yaml:"inaSensors" json:"inaSensors"`
+	INASensors map[string]INASensor `json:"inaSensors" yaml:"inaSensors"`
 
 	// GPIO pins (10 pins)
-	GPIOPins map[string]GPIOPin `yaml:"gpioPins" json:"gpioPins"`
+	GPIOPins map[string]GPIOPin `json:"gpioPins" yaml:"gpioPins"`
 
 	// Node connections (pairs of connected nodes)
-	Connections []Connection `yaml:"connections" json:"connections"`
+	Connections []Connection `json:"connections" yaml:"connections"`
 
 	// Node definitions
-	Nodes map[string]Node `yaml:"nodes" json:"nodes"`
+	Nodes map[string]Node `json:"nodes" yaml:"nodes"`
 }
 
 // HardwareConfig represents Jumperless hardware information
 type HardwareConfig struct {
-	Generation    int `yaml:"generation" json:"generation"`
-	Revision      int `yaml:"revision" json:"revision"`
-	ProbeRevision int `yaml:"probeRevision" json:"probeRevision"`
+	Generation    int `json:"generation"    yaml:"generation"`
+	Revision      int `json:"revision"      yaml:"revision"`
+	ProbeRevision int `json:"probeRevision" yaml:"probeRevision"`
 }
 
 // DACChannel represents a DAC channel state
 type DACChannel struct {
-	Voltage float64 `yaml:"voltage" json:"voltage"` // -8.0 to +8.0V
+	Voltage float64 `json:"voltage" yaml:"voltage"` // -8.0 to +8.0V
 }
 
 // ADCChannel represents an ADC channel state
 type ADCChannel struct {
-	Voltage  float64 `yaml:"voltage" json:"voltage"`   // 0.0-8.0V for channels 0-3, 0.0-5.0V for channel 4
-	MaxValue float64 `yaml:"maxValue" json:"maxValue"` // Maximum allowed voltage
+	Voltage  float64 `json:"voltage"  yaml:"voltage"`  // 0.0-8.0V for channels 0-3, 0.0-5.0V for channel 4
+	MaxValue float64 `json:"maxValue" yaml:"maxValue"` // Maximum allowed voltage
 }
 
 // INASensor represents an INA219 current/voltage sensor
 type INASensor struct {
-	Current    float64 `yaml:"current" json:"current"`       // Amperes
-	Voltage    float64 `yaml:"voltage" json:"voltage"`       // Volts
-	BusVoltage float64 `yaml:"busVoltage" json:"busVoltage"` // Volts
-	Power      float64 `yaml:"power" json:"power"`           // Watts
+	Current    float64 `json:"current"    yaml:"current"`    // Amperes
+	Voltage    float64 `json:"voltage"    yaml:"voltage"`    // Volts
+	BusVoltage float64 `json:"busVoltage" yaml:"busVoltage"` // Volts
+	Power      float64 `json:"power"      yaml:"power"`      // Watts
 }
 
 // GPIOPin represents a GPIO pin state
 type GPIOPin struct {
-	Value     int    `yaml:"value" json:"value"`         // 0 or 1
-	Direction string `yaml:"direction" json:"direction"` // "input" or "output"
-	Pull      string `yaml:"pull" json:"pull"`           // "none", "up", "down"
+	Value     int    `json:"value"     yaml:"value"`     // 0 or 1
+	Direction string `json:"direction" yaml:"direction"` // "input" or "output"
+	Pull      string `json:"pull"      yaml:"pull"`      // "none", "up", "down"
 }
 
 // Connection represents a connection between two nodes
 type Connection struct {
-	NodeA string `yaml:"nodeA" json:"nodeA"`
-	NodeB string `yaml:"nodeB" json:"nodeB"`
+	NodeA string `json:"nodeA" yaml:"nodeA"`
+	NodeB string `json:"nodeB" yaml:"nodeB"`
 }
 
 // Node represents a Jumperless node
 type Node struct {
-	Number   int      `yaml:"number" json:"number"`
-	Constant string   `yaml:"constant" json:"constant"`
-	Aliases  []string `yaml:"aliases" json:"aliases"`
-	Type     string   `yaml:"type" json:"type"` // "gpio", "dac", "adc", "power", etc.
+	Number   int      `json:"number"   yaml:"number"`
+	Constant string   `json:"constant" yaml:"constant"`
+	Aliases  []string `json:"aliases"  yaml:"aliases"`
+	Type     string   `json:"type"     yaml:"type"` // "gpio", "dac", "adc", "power", etc.
 }
 
 // RequestResponse defines a request pattern and its response(s)
 type RequestResponse struct {
 	// Request pattern (can be literal string or regex)
-	Request string `yaml:"request" json:"request"`
+	Request string `json:"request" yaml:"request"`
 
 	// Whether request is a regex pattern
-	IsRegex bool `yaml:"isRegex" json:"isRegex"`
+	IsRegex bool `json:"isRegex" yaml:"isRegex"`
 
 	// Single response (for backward compatibility)
-	Response string `yaml:"response,omitempty" json:"response,omitempty"`
+	Response string `json:"response,omitempty" yaml:"response,omitempty"`
 
 	// Multiple responses with ordering/randomization
-	Responses []ResponseOption `yaml:"responses,omitempty" json:"responses,omitempty"`
+	Responses []ResponseOption `json:"responses,omitempty" yaml:"responses,omitempty"`
 
 	// Response configuration
-	ResponseConfig ResponseConfig `yaml:"responseConfig" json:"responseConfig"`
+	ResponseConfig ResponseConfig `json:"responseConfig" yaml:"responseConfig"`
 }
 
 // ResponseOption represents a single response option with optional weight
 type ResponseOption struct {
 	// Response content
-	Response string `yaml:"response" json:"response"`
+	Response string `json:"response" yaml:"response"`
 
 	// Weight for random selection (higher = more likely)
-	Weight int `yaml:"weight,omitempty" json:"weight,omitempty"`
+	Weight int `json:"weight,omitempty" yaml:"weight,omitempty"`
 
 	// Order index for sequential responses (0-based)
-	Order int `yaml:"order,omitempty" json:"order,omitempty"`
+	Order int `json:"order,omitempty" yaml:"order,omitempty"`
 }
 
 // ResponseConfig defines how responses should be delivered
 type ResponseConfig struct {
 	// Delay before sending response
-	Delay time.Duration `yaml:"delay" json:"delay"`
+	Delay time.Duration `json:"delay" yaml:"delay"`
 
 	// Random jitter to add to delay (0 to JitterMax)
-	JitterMax time.Duration `yaml:"jitterMax" json:"jitterMax"`
+	JitterMax time.Duration `json:"jitterMax" yaml:"jitterMax"`
 
 	// Whether to chunk the response
-	Chunked bool `yaml:"chunked" json:"chunked"`
+	Chunked bool `json:"chunked" yaml:"chunked"`
 
 	// Size of each chunk (if chunked)
-	ChunkSize int `yaml:"chunkSize" json:"chunkSize"`
+	ChunkSize int `json:"chunkSize" yaml:"chunkSize"`
 
 	// Delay between chunks
-	ChunkDelay time.Duration `yaml:"chunkDelay" json:"chunkDelay"`
+	ChunkDelay time.Duration `json:"chunkDelay" yaml:"chunkDelay"`
 
 	// Response selection mode: "sequential", "random", "weighted"
-	SelectionMode string `yaml:"selectionMode,omitempty" json:"selectionMode,omitempty"`
+	SelectionMode string `json:"selectionMode,omitempty" yaml:"selectionMode,omitempty"`
 }
 
 // DefaultConfig returns a default configuration
@@ -242,6 +242,50 @@ func DefaultConfig() *Config {
 					JitterMax: 5 * time.Millisecond,
 				},
 			},
+			{
+				Request: "~",
+				IsRegex: false,
+				Response: "\r\n\r\ncopy / edit / paste any of these lines\r\n" +
+					"into the main menu to change a setting\r\n\r\n" +
+					"Jumperless Config:\r\n\r\n\r\n" +
+					"`[config] firmware_version = 5.2.2.0;\r\n\r\n" +
+					"`[hardware] generation = 5;\r\n" +
+					"`[hardware] revision = 5;\r\n" +
+					"`[hardware] probe_revision = 5;\r\n\r\n" +
+					"`[dacs] dac0_voltage = {{dac_voltage:0}};\r\n" +
+					"`[dacs] dac1_voltage = {{dac_voltage:1}};\r\n" +
+					"`[dacs] top_rail_voltage = {{dac_voltage:2}};\r\n" +
+					"`[dacs] bottom_rail_voltage = {{dac_voltage:3}};\r\n\r\n",
+				ResponseConfig: ResponseConfig{
+					Delay:     15 * time.Millisecond,
+					JitterMax: 5 * time.Millisecond,
+				},
+			},
+			{
+				Request:  `>dac_get\((\d+)\)`,
+				IsRegex:  true,
+				Response: "Python> >dac_get($1)\r\n{{dac_voltage:$1}}\r\n",
+				ResponseConfig: ResponseConfig{
+					Delay:     5 * time.Millisecond,
+					JitterMax: 2 * time.Millisecond,
+				},
+			},
+			{
+				Request: ">print_nets()",
+				IsRegex: false,
+				Response: "Python> >print_nets()\r\n" +
+					"Index\tName\t\tVoltage\t\tConstant\r\n" +
+					"1\tGND\t\t 0 V         GND\r\n" +
+					"2\tTop Rail\t 0.00 V      TOP_R\r\n" +
+					"3\tBottom Rail\t 0.00 V      BOT_R\r\n" +
+					"4\tDAC 0\t\t {{dac_value:0}} V      DAC_0\r\n" +
+					"5\tDAC 1\t\t {{dac_value:1}} V      DAC_1\r\n" +
+					"\r\n",
+				ResponseConfig: ResponseConfig{
+					Delay:     20 * time.Millisecond,
+					JitterMax: 10 * time.Millisecond,
+				},
+			},
 		},
 	}
 }
@@ -260,7 +304,7 @@ func createDefaultNodes() map[string]Node {
 	nodes["DAC_1"] = Node{Number: 5, Constant: "DAC_1", Type: "dac"}
 
 	// GPIO nodes (simplified subset for demo)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		nodeKey := fmt.Sprintf("GPIO_%d", i)
 		nodes[nodeKey] = Node{
 			Number:   10 + i,

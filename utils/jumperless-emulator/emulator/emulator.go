@@ -24,6 +24,7 @@ import (
 	"math/rand"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,6 +45,15 @@ type Emulator struct {
 func New(config *Config, logger *log.Logger) (*Emulator, error) {
 	if logger == nil {
 		logger = log.New(os.Stdout, "[emulator] ", log.LstdFlags)
+	}
+
+	// Validate regex patterns in config
+	for i, mapping := range config.Mappings {
+		if mapping.IsRegex {
+			if _, err := regexp.Compile(mapping.Request); err != nil {
+				return nil, fmt.Errorf("invalid regex pattern in mapping %d: %w", i, err)
+			}
+		}
 	}
 
 	return &Emulator{
@@ -92,10 +102,14 @@ func (e *Emulator) Stop() error {
 	close(e.shutdown)
 
 	if e.ptmx != nil {
-		e.ptmx.Close()
+		if err := e.ptmx.Close(); err != nil {
+			e.logger.Printf("Error closing ptmx: %v", err)
+		}
 	}
 	if e.pts != nil {
-		e.pts.Close()
+		if err := e.pts.Close(); err != nil {
+			e.logger.Printf("Error closing pts: %v", err)
+		}
 	}
 
 	// Clean up symlink if we created one
@@ -132,7 +146,9 @@ func (e *Emulator) handleRequests(ctx context.Context) {
 			return
 		default:
 			// Set read timeout
-			e.ptmx.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+			if err := e.ptmx.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
+				e.logger.Printf("Error setting read deadline: %v", err)
+			}
 
 			n, err := e.ptmx.Read(buffer)
 			if err != nil {
@@ -265,7 +281,7 @@ func (e *Emulator) processResponse(response, request string) string {
 	e.processHardwareCommand(request)
 
 	// Replace placeholders with current hardware state
-	return e.replacePlaceholders(response, request)
+	return e.replacePlaceholders(response)
 }
 
 // processHardwareCommand processes hardware-related commands and updates internal state
@@ -336,7 +352,7 @@ func (e *Emulator) processHardwareCommand(request string) {
 }
 
 // replacePlaceholders replaces placeholders in response with current hardware state
-func (e *Emulator) replacePlaceholders(response, request string) string {
+func (e *Emulator) replacePlaceholders(response string) string {
 	result := response
 
 	// Replace DAC voltage placeholders: {{dac_voltage:channel}}
@@ -347,6 +363,16 @@ func (e *Emulator) replacePlaceholders(response, request string) string {
 			return fmt.Sprintf("%.2fV", dac.Voltage)
 		}
 		return "0.00V"
+	})
+
+	// Replace DAC value placeholders: {{dac_value:channel}} (without V suffix)
+	dacValueRegex := regexp.MustCompile(`\{\{dac_value:(\w+)\}\}`)
+	result = dacValueRegex.ReplaceAllStringFunc(result, func(match string) string {
+		channel := dacValueRegex.FindStringSubmatch(match)[1]
+		if dac, exists := e.config.Jumperless.DACChannels[channel]; exists {
+			return fmt.Sprintf("%.2f", dac.Voltage)
+		}
+		return "0.00"
 	})
 
 	// Replace ADC voltage placeholders: {{adc_voltage:channel}}
@@ -364,7 +390,7 @@ func (e *Emulator) replacePlaceholders(response, request string) string {
 	result = gpioRegex.ReplaceAllStringFunc(result, func(match string) string {
 		pin := gpioRegex.FindStringSubmatch(match)[1]
 		if gpio, exists := e.config.Jumperless.GPIOPins[pin]; exists {
-			return fmt.Sprintf("%d", gpio.Value)
+			return strconv.Itoa(gpio.Value)
 		}
 		return "0"
 	})
@@ -403,7 +429,10 @@ func (e *Emulator) addConnection(nodeA, nodeB string) {
 func (e *Emulator) removeConnection(nodeA, nodeB string) {
 	for i, conn := range e.config.Jumperless.Connections {
 		if (conn.NodeA == nodeA && conn.NodeB == nodeB) || (conn.NodeA == nodeB && conn.NodeB == nodeA) {
-			e.config.Jumperless.Connections = append(e.config.Jumperless.Connections[:i], e.config.Jumperless.Connections[i+1:]...)
+			e.config.Jumperless.Connections = append(
+				e.config.Jumperless.Connections[:i],
+				e.config.Jumperless.Connections[i+1:]...,
+			)
 			return
 		}
 	}
@@ -423,7 +452,9 @@ func parseFloat(s string) float64 {
 	if val, err := regexp.MatchString(`^[+-]?\d*\.?\d+$`, s); err == nil && val {
 		// Simple float parsing for demo
 		var result float64
-		fmt.Sscanf(s, "%f", &result)
+		if _, err := fmt.Sscanf(s, "%f", &result); err != nil {
+			return 0.0
+		}
 		return result
 	}
 	return 0.0
@@ -432,7 +463,9 @@ func parseFloat(s string) float64 {
 func parseInt(s string) int {
 	if val, err := regexp.MatchString(`^\d+$`, s); err == nil && val {
 		var result int
-		fmt.Sscanf(s, "%d", &result)
+		if _, err := fmt.Sscanf(s, "%d", &result); err != nil {
+			return 0
+		}
 		return result
 	}
 	return 0

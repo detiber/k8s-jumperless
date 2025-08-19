@@ -45,13 +45,17 @@ func TestEmulatorWithLocalController(t *testing.T) {
 	}
 
 	// Start emulator
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	if err := emu.Start(ctx); err != nil {
 		t.Fatalf("Failed to start emulator: %v", err)
 	}
-	defer emu.Stop()
+	defer func() {
+		if err := emu.Stop(); err != nil {
+			t.Logf("Error stopping emulator: %v", err)
+		}
+	}()
 
 	// Give emulator time to start
 	time.Sleep(200 * time.Millisecond)
