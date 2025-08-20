@@ -31,18 +31,21 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
+	"github.com/detiber/k8s-jumperless/utils/proxy/proxy"
+	"github.com/detiber/k8s-jumperless/utils/proxy/proxy/config"
 )
 
 const (
-	defaultConfigFile = "jumperless-emulator.yml"
+	defaultConfigFile = "jumperless-proxy.yml"
 	cfgConfig         = "config"
 	cfgGenerateConfig = "generate-config"
 	cfgVerbose        = "verbose"
-	cfgSerialPort     = "serial.port"
-	cfgSerialBaudRate = "serial.baud-rate"
-	cfgSerialStopBits = "serial.stop-bits"
-	cfgSerialParity   = "serial.parity"
+	cfgShowConfig     = "show-config"
+	cfgBaudRate       = "baud-rate"
+	cfgBufferSize     = "buffer-size"
+	cfgVirtualPort    = "virtual-port"
+	cfgRealPort       = "real-port"
+	cfgEmulatorConfig = "emulator-config"
 )
 
 func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue bool, description string) {
@@ -68,56 +71,47 @@ func configFlags(cmd *cobra.Command, v *viper.Viper) {
 		cmd.PersistentFlags(), v, cfgVerbose, false, "enable verbose logging",
 	)
 
-	// Serial port flags
-	configStringVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgSerialPort,
-		"",
-		"serial port path (e.g. /dev/ttyUSB0) (overrides config)",
+	configIntVar(
+		cmd.Flags(), v, cfgBaudRate, config.DefaultBaudRate, "baud rate for serial communication",
 	)
 
 	configIntVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgSerialBaudRate,
-		0,
-		"baud rate (e.g. 9600) (overrides config)",
-	)
-
-	configIntVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgSerialStopBits,
-		0,
-		"stop bits: 1 or 2 (overrides config)",
+		cmd.Flags(), v, cfgBufferSize, config.DefaultBufferSize, "buffer size for serial communication",
 	)
 
 	configStringVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgSerialParity,
-		"",
-		"parity: none, odd, even, mark, space (overrides config)",
+		cmd.Flags(), v, cfgVirtualPort, "",
+		"name of the virtual serial port to create (e.g., /tmp/jumperless-virtual)",
+	)
+
+	configStringVar(
+		cmd.Flags(), v, cfgRealPort, "",
+		"name of the real serial port connected to the Jumperless device (e.g., /dev/ttyACM0)",
+	)
+
+	configStringVar(
+		cmd.Flags(), v, cfgEmulatorConfig, "",
+		"path to save the generated emulator configuration file",
 	)
 
 	// Utility flags
 	cmd.Flags().Bool(cfgGenerateConfig, false, "generate default config file and exit")
+	cmd.Flags().Bool(cfgShowConfig, false, "show current configuration and exit")
 }
 
 func main() {
 	v := viper.New()
 
 	// Environment variable support
-	v.SetEnvPrefix("JUMPERLESS_EMULATOR")
+	v.SetEnvPrefix("JUMPERLESS_PROXY")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 
 	rootCmd := &cobra.Command{
-		Use:   "jumperless-emulator",
-		Short: "Jumperless device emulator",
-		Long: `A virtual Jumperless device that creates a pseudo-terminal (pty) based serial port 
-and responds to commands based on configurable request/response mappings.`,
+		Use:   "proxy",
+		Short: "Jumperless recording proxy",
+		Long: `A recording proxy that sits between applications and real Jumperless hardware 
+to capture communication patterns for emulator configuration generation.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			configFile, err := cmd.Flags().GetString(cfgConfig)
 			if err != nil {
@@ -137,7 +131,7 @@ and responds to commands based on configurable request/response mappings.`,
 
 			// If a config file is found, read it in, we can ignore errors if not found
 			var viperNotFoundErr viper.ConfigFileNotFoundError
-			if err := v.ReadInConfig(); err != nil && !errors.As(err, &viperNotFoundErr) {
+			if err := v.ReadInConfig(); err != nil && !errors.As(err, &viperNotFoundErr) && !errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("error reading config file: %w", err)
 			}
 
@@ -148,6 +142,7 @@ and responds to commands based on configurable request/response mappings.`,
 					fmt.Fprintf(os.Stderr, "No config file specified, using the default config values: %+v\n", defaultConfigValues)
 				} else {
 					fmt.Fprintf(os.Stderr, "Using config file: %s\n", v.ConfigFileUsed())
+					fmt.Fprintf(os.Stderr, "Config values: %+v\n", v.AllSettings())
 				}
 			}
 
@@ -159,19 +154,43 @@ and responds to commands based on configurable request/response mappings.`,
 				return fmt.Errorf("failed to get config flag: %w", err)
 			}
 
+			shouldShowConfig, err := cmd.Flags().GetBool(cfgShowConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get show-config flag: %w", err)
+			}
+
 			shouldGenerateConfig, err := cmd.Flags().GetBool(cfgGenerateConfig)
 			if err != nil {
 				return fmt.Errorf("failed to get generate-config flag: %w", err)
 			}
 
-			if shouldGenerateConfig {
-				if err := generateConfig(v, configFile); err != nil {
-					return fmt.Errorf("failed to generate config: %w", err)
+			switch {
+			case shouldShowConfig:
+				// Write current config to stdout
+				if err := v.WriteConfigTo(os.Stdout); err != nil {
+					return fmt.Errorf("failed to write current config: %w", err)
 				}
-				return nil
-			}
 
-			return runEmulator(v)
+				return nil
+			case shouldGenerateConfig:
+				// Generate default config file
+				if configFile == "" {
+					configFile = defaultConfigFile
+					if err := v.SafeWriteConfig(); err != nil {
+						return fmt.Errorf("failed to generate config file: %w", err)
+					}
+				} else {
+					if err := v.WriteConfigAs(configFile); err != nil {
+						return fmt.Errorf("failed to generate config file: %w", err)
+					}
+				}
+
+				fmt.Printf("Generated default config file: %s\n", configFile)
+
+				return nil
+			default:
+				return runProxy(v)
+			}
 		},
 	}
 
@@ -183,78 +202,56 @@ and responds to commands based on configurable request/response mappings.`,
 	}
 }
 
-func generateConfig(v *viper.Viper, configFile string) error {
-	// Generate default config file
-	if err := v.SafeWriteConfig(); err != nil {
-		return fmt.Errorf("failed to generate config file: %w", err)
-	}
-
-	if configFile == "" {
-		configFile = defaultConfigFile
-	}
-
-	fmt.Printf("Generated default config file: %s\n", configFile)
-	return nil
-}
-
-func runEmulator(v *viper.Viper) error {
+func runProxy(v *viper.Viper) error {
 	// Setup logger
-	logger := log.New(os.Stdout, "[jumperless-emulator] ", log.LstdFlags)
-
-	if v.GetBool(cfgVerbose) {
-		config := v.AllSettings()
-		logger.Printf("Starting Jumperless emulator with config: %v", config)
+	logger := log.New(os.Stdout, "[proxy] ", log.LstdFlags)
+	if !v.GetBool("verbose") {
+		logger.SetOutput(os.Stderr)
 	}
 
-	config, err := configFromViper(v)
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
+	proxyConfig := new(config.ProxyConfig)
+
+	if err := v.Unmarshal(proxyConfig); err != nil {
+		return fmt.Errorf("failed to unmarshal current config: %w", err)
 	}
 
-	// Create emulator
-	emu, err := emulator.New(config, logger)
+	logger.Printf("Starting Jumperless proxy with config: %+v", proxyConfig)
+
+	// Create proxy
+	p, err := proxy.New(proxyConfig, logger)
 	if err != nil {
-		return fmt.Errorf("failed to create emulator: %w", err)
+		return fmt.Errorf("failed to create proxy: %w", err)
 	}
 
 	// Setup signal handling
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancelCause(context.Background())
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		sig := <-sigChan
 		logger.Printf("Received signal %s, shutting down...", sig)
-		cancel()
+
+		cancel(nil)
 	}()
 
-	// Start emulator
-	if err := emu.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start emulator: %w", err)
+	// Start proxy
+	if err := p.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start proxy: %w", err)
 	}
 
-	logger.Printf("Emulator started. Virtual serial port: %s", emu.GetPortName())
-	logger.Printf("Press Ctrl+C to stop")
+	logger.Printf("Proxy started. Virtual port: %s", p.GetVirtualPortName())
+	logger.Printf("Connect your application to the virtual port and interact with the device")
+	logger.Printf("Press Ctrl+C to stop and save recording")
 
 	// Wait for shutdown signal
 	<-ctx.Done()
 
-	logger.Printf("Stopping emulator...")
-	if err := emu.Stop(); err != nil {
-		logger.Printf("Error stopping emulator: %v", err)
+	logger.Printf("Stopping proxy...")
+	if err := p.Stop(); err != nil {
+		logger.Printf("Error stopping proxy: %v", err)
 	}
 
-	logger.Printf("Emulator stopped")
+	logger.Printf("Proxy stopped")
 	return nil
-}
-
-// configFromViper
-func configFromViper(v *viper.Viper) (*emulator.Config, error) {
-	config := emulator.DefaultConfig()
-
-	if err := v.Unmarshal(config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
-	}
-
-	return config, nil
 }

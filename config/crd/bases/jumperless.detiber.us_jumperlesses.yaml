@@ -85,32 +85,63 @@ spec:
                 description: Host defines the host that is connected to the Jumperless
                   device.
                 properties:
-                  hostname:
-                    description: Hostname is the hostname or IPAddress of the connected
-                      host.
-                    type: string
-                  sshKeyRef:
+                  local:
                     description: |-
-                      SSHKeyRef is a reference to a Kubernetes Secret that contains the SSH private key
-                      to use when connecting to the host.
-                      The Secret must contain a key named "ssh-privatekey" with the private key data.
+                      Local specifies that the Jumperless device is connected via a local serial port.
+                      Exactly one of Local or SSH must be specified.
                     properties:
-                      name:
-                        description: name is unique within a namespace to reference
-                          a secret resource.
-                        type: string
-                      namespace:
-                        description: namespace defines the space within which the
-                          secret name must be unique.
+                      baudRate:
+                        default: 115200
+                        description: |-
+                          BaudRate is the baud rate to use when connecting to the local serial port.
+                          Common values are 9600, 19200, 38400, 57600, 115200.
+                        format: int32
+                        type: integer
+                      port:
+                        description: Port is the local serial port that is connected
+                          to the Jumperless device.
                         type: string
                     type: object
-                    x-kubernetes-map-type: atomic
-                  username:
-                    description: Username is the username to use when connecting to
-                      the host.
-                    type: string
-                required:
-                - hostname
+                  ssh:
+                    description: |-
+                      SSH specifies that the Jumperless device is connected via SSH to a remote host.
+                      Exactly one of Local or SSH must be specified.
+                    properties:
+                      hostname:
+                        description: Hostname is the hostname or IPAddress of the
+                          connected host.
+                        type: string
+                      port:
+                        default: 22
+                        description: Port is the SSH port to use when connecting to
+                          the host.
+                        format: int32
+                        type: integer
+                      sshKeyRef:
+                        description: |-
+                          SSHKeyRef is a reference to a Kubernetes Secret that contains the SSH private key
+                          to use when connecting to the host.
+                          The Secret must contain a key named "ssh-privatekey" with the private key data.
+                        properties:
+                          name:
+                            description: name is unique within a namespace to reference
+                              a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which
+                              the secret name must be unique.
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      username:
+                        description: Username is the username to use when connecting
+                          to the host.
+                        type: string
+                    required:
+                    - hostname
+                    - sshKeyRef
+                    - username
+                    type: object
                 type: object
             required:
             - host
@@ -277,6 +308,16 @@ spec:
                   This field is populated by the controller after successfully connecting to the device.
                 items:
                   properties:
+                    color:
+                      description: |-
+                        Color is the color of the net.
+                        Valid values are standard color names like "red", "green", "blue", etc.
+                      type: string
+                    data:
+                      description: |-
+                        Data includes any additional data associated with the net.
+                        This field is optional and may be empty.
+                      type: string
                     index:
                       description: Index is the index of the net.
                       format: int32
@@ -305,7 +346,6 @@ spec:
                   - index
                   - name
                   - nodes
-                  - voltage
                   type: object
                 type: array
                 x-kubernetes-list-map-keys:

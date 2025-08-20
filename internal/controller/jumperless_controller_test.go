@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/detiber/k8s-jumperless/internal/controller/local"
+	"github.com/detiber/k8s-jumperless/jumperless"
 )
 
 var _ = Describe("Jumperless Controller", func() {
@@ -40,11 +40,11 @@ var _ = Describe("Jumperless Controller", func() {
 			Name:      resourceName,
 			Namespace: "default",
 		}
-		jumperless := &jumperlessv5alpha1.Jumperless{}
+		j := &jumperlessv5alpha1.Jumperless{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Jumperless")
-			err := k8sClient.Get(ctx, typeNamespacedName, jumperless)
+			err := k8sClient.Get(ctx, typeNamespacedName, j)
 			if err != nil && errors.IsNotFound(err) {
 				resource := &jumperlessv5alpha1.Jumperless{
 					ObjectMeta: metav1.ObjectMeta{
@@ -53,7 +53,7 @@ var _ = Describe("Jumperless Controller", func() {
 					},
 					Spec: jumperlessv5alpha1.JumperlessSpec{
 						Host: jumperlessv5alpha1.JumperlessHost{
-							Hostname: "localhost",
+							Local: &jumperlessv5alpha1.JumperlessHostLocal{},
 						},
 					},
 				}
@@ -82,7 +82,7 @@ var _ = Describe("Jumperless Controller", func() {
 			Expect(err).To(SatisfyAny(
 				Succeed(),
 				MatchError(ErrNotImplemented),
-				MatchError(local.ErrNoSerialPortFound),
+				MatchError(jumperless.ErrNoSerialPortFound),
 			))
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.

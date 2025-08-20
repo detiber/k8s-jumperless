@@ -1,154 +1,92 @@
 package local
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/x/ansi"
-	"go.bug.st/serial"
-	"go.bug.st/serial/enumerator"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"k8s.io/utils/ptr"
 
 	jumperlessv5alpha1 "github.com/detiber/k8s-jumperless/api/v5alpha1"
+	"github.com/detiber/k8s-jumperless/jumperless"
 )
 
-var ErrNoSerialPortFound = errors.New("no serial port found")
 var ErrUnexpectedCommandOutput = errors.New("unexpected command output format")
 var ErrParseNetLine = errors.New("unable to parse net line")
+var ErrParseLineDuplicateIndex = errors.New("net index is not greater than previous index")
 
-func isJumperlessPort(ctx context.Context, portName string) (bool, string, error) {
-	result, err := execRawCommand(ctx, portName, "?", 10*time.Millisecond)
-	if err != nil {
-		return false, "", fmt.Errorf("failed to execute command: %w", err)
-	}
-
-	// Jumperless responds to "?" with a string containing "Jumperless firmware version:"
-	expectedPrefix := "Jumperless firmware version:"
-	if strings.Contains(result, expectedPrefix) {
-		version := strings.TrimSpace(strings.Replace(result, expectedPrefix, "", 1))
-		return true, version, nil
-	}
-
-	return false, "", nil
+var namedColors = []string{ //nolint:gochecknoglobals
+	"red",
+	"orange",
+	"amber",
+	"yellow",
+	"chartreuse",
+	"green",
+	"seafoam",
+	"cyan",
+	"blue",
+	"royal blue",
+	"indigo",
+	"violet",
+	"purple",
+	"pink",
+	"magenta",
+	"white",
+	"black",
+	"grey",
 }
 
-func execRawCommand(ctx context.Context, portName string, command string, waitForRead time.Duration) (string, error) {
-	log := ctrl.LoggerFrom(ctx)
-
-	log.Info("Executing command on Jumperless", "port", portName, "command", command)
-
-	mode := &serial.Mode{
-		BaudRate: 115200,
-	}
-
-	s, err := serial.Open(portName, mode)
-	if err != nil {
-		return "", fmt.Errorf("unable to open serial port %s: %w", portName, err)
-	}
-	defer s.Close() //nolint:errcheck
-
-	// Reset input and output buffers to ensure clean state
-	if err := s.ResetInputBuffer(); err != nil {
-		return "", fmt.Errorf("unable to reset input buffer: %w", err)
-	}
-
-	if err := s.ResetOutputBuffer(); err != nil {
-		return "", fmt.Errorf("unable to reset output buffer: %w", err)
-	}
-
-	if _, err := s.Write([]byte(command)); err != nil {
-		return "", fmt.Errorf("unable to write to serial port %s: %w", portName, err)
-	}
-
-	if err := s.Drain(); err != nil {
-		return "", fmt.Errorf("failed to drain serial port: %s: %w", portName, err)
-	}
-
-	if err := s.SetReadTimeout(time.Second); err != nil {
-		return "", fmt.Errorf("unable to set read timeout on serial port %s: %w", portName, err)
-	}
-
-	time.Sleep(waitForRead)
-
-	result := ""
-
-	buff := make([]byte, 128)
-	for {
-		n, err := s.Read(buff)
-		if err != nil {
-			return "", fmt.Errorf("unable to read from serial port %s: %w", portName, err)
-		}
-
-		if n == 0 {
-			break // No more data to read
-		}
-
-		result += string(buff[:n])
-	}
-
-	log.Info("Command executed", "port", portName, "command", command, "rawResult", result)
-
-	return result, nil
-}
-
-func EnumerateSerialPorts() ([]*enumerator.PortDetails, error) {
-	ports, err := enumerator.GetDetailedPortsList()
-	if err != nil {
-		return nil, fmt.Errorf("unable to list serial ports: %w", err)
-	}
-
-	if len(ports) == 0 {
-		return nil, ErrNoSerialPortFound
-	}
-
-	return ports, nil
-}
-
-func FindJumperlessPort(ctx context.Context, ports []*enumerator.PortDetails) (*enumerator.PortDetails, string, error) {
-	errs := []error{}
-
-	for _, port := range ports {
-		// Check if this is a Jumperless port
-		isJumperless, version, err := isJumperlessPort(ctx, port.Name)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("unable to determine if port is Jumperless %w", err))
-			continue
-		}
-
-		if isJumperless {
-			return port, version, nil
-		}
-	}
-
-	if len(errs) > 0 {
-		return nil, "", kerrors.NewAggregate(errs)
-	}
-
-	return nil, "", nil
-}
-
+// Example net lines:
+// "Index\tName\t\tVoltage\t    Nodes\t
+// \r1\t GND\t\t 0 V         GND,9
+// 2\t Top Rail\t 0.00 V      TOP_R,55
+// 3\t Bottom Rail\t 0.00 V      BOT_R
+// 4\t DAC 0\t\t 3.33 V      DAC_0,BUF_IN
+// 5\t DAC 1\t\t 0.00 V      DAC_1
+// Index\tName\t\tColor\t    Nodes          ADC / GPIO
+// 6\t Net 6\t\t red         UART_Rx,D1
+// 7\t Net 7\t\t red         UART_Tx,D0
+// 8\t Net 8\t\t pink        6,5
+// 9\t Net 9\t\t indigo      A3,13
+// 10\t Net 10\t\t blue        51,D10
+// 11\t Net 11\t\t cyan        ADC_3,20  \t    \b-2.78 V
+// 12\t Net 12\t\t \b\b* red    - f  GP_1,25   \t    input - floating
+// 13\t Net 13\t\t \b\b* red    - h  GP_4,36   \t    output - high
 func parseNets(netsOutput string) ([]jumperlessv5alpha1.Net, error) {
 	errs := []error{}
 
 	nets := slices.Collect(func(yield func(jumperlessv5alpha1.Net) bool) {
+		hasColor := false
+
+		currentIndex := int32(0)
+
 		for line := range strings.SplitSeq(netsOutput, "\n") {
 			trimmed := strings.TrimSpace(line)
-			if trimmed != "" && !strings.HasPrefix(trimmed, "Index") {
+			if trimmed != "" {
+				if strings.HasPrefix(trimmed, "Index") {
+					if strings.Contains(trimmed, "Color") {
+						hasColor = true
+					} else {
+						hasColor = false
+					}
+				} else {
+					net, err := parseNetLine(trimmed, hasColor, currentIndex)
+					if err != nil {
+						if !errors.Is(err, ErrParseLineDuplicateIndex) {
+							// Only append parse errors that are not due to duplicate index
+							errs = append(errs, fmt.Errorf("unable to parse net line %q: %w", trimmed, err))
+						}
+						continue
+					}
 
-				net, err := parseNetLine(trimmed)
-				if err != nil {
-					errs = append(errs, fmt.Errorf("unable to parse net line %q: %w", trimmed, err))
-					continue
-				}
-
-				if !yield(net) {
-					return
+					if !yield(net) {
+						return
+					}
 				}
 			}
 		}
@@ -157,15 +95,8 @@ func parseNets(netsOutput string) ([]jumperlessv5alpha1.Net, error) {
 	return nets, kerrors.NewAggregate(errs)
 }
 
-func parseNetLine(netLine string) (jumperlessv5alpha1.Net, error) {
+func parseNetLine(netLine string, hasColor bool, currentIndex int32) (jumperlessv5alpha1.Net, error) {
 	net := jumperlessv5alpha1.Net{}
-
-	// Example net lines:
-	//   "\r1\t GND\t\t 0 V         GND\t    "
-	//   "2\t Top Rail\t 0.00 V      TOP_R\t    "
-	//   "3\t Bottom Rail\t 0.00 V      BOT_R\t    "
-	//   "4\t DAC 0\t\t 3.33 V      DAC_0,BUF_IN\t    "
-	//   "5\t DAC 1\t\t 0.00 V      DAC_1\t    "
 
 	// start by splitting fields on tabs to get index, name, and rest
 	fields := strings.SplitN(netLine, "\t", 3)
@@ -182,20 +113,100 @@ func parseNetLine(netLine string) (jumperlessv5alpha1.Net, error) {
 
 	net.Index = int32(index)
 
+	if net.Index <= currentIndex {
+		// If the current index is not less than the previous index, return an error
+		// this is to short circuit the case where we are seeing duplicated output lines
+		return jumperlessv5alpha1.Net{}, fmt.Errorf("net index %d is not greater than previous index %d: %w", net.Index, currentIndex, ErrParseLineDuplicateIndex)
+	}
+
 	// name is the second field
 	net.Name = strings.TrimSpace(fields[1])
 
 	// rest is the remaining fields
 	rest := strings.TrimSpace(fields[2])
+	var nodesPart string
 
-	before, after, found := strings.Cut(rest, " V")
-	if !found {
-		return jumperlessv5alpha1.Net{}, fmt.Errorf("unable to find voltage in net line %s: %w", netLine, ErrParseNetLine)
+	// now parse the rest based on whether we have color, voltage, and GPIO
+	if !hasColor {
+		// for example:
+		// "0 V         GND,9"
+		// "0.00 V      TOP_R,55"
+		// "0.00 V      BOT_R"
+		// "3.33 V      DAC_0,BUF_IN"
+		// "0.00 V      DAC_1"
+		before, after, found := strings.Cut(rest, " V")
+		if !found {
+			return jumperlessv5alpha1.Net{}, fmt.Errorf("unable to find voltage in net line %s: %w", netLine, ErrParseNetLine)
+		}
+
+		net.Voltage = ptr.To(strings.TrimSpace(before) + "V") // ensure voltage is suffixed with "V"
+
+		nodesPart = strings.TrimSpace(after)
+	} else {
+		// for example:
+		// "red         UART_Rx,D1"
+		// "red         UART_Tx,D0"
+		// "pink        6,5"
+		// "indigo      A3,13"
+		// "blue        51,D10"
+		// "royal blue  ADC_3,20  \t    \b-6.69 V"
+		// "\b\b* red    - f  GP_1,25   \t    input - floating"
+		// "\b\b* red    - h  GP_4,36   \t    output - high"
+
+		// since there may still be \b and * characters before the color,
+		// we need to trim those first
+		for strings.HasPrefix(rest, "\b") {
+			rest = strings.TrimPrefix(rest, "\b")
+		}
+		rest = strings.TrimSpace(strings.TrimPrefix(rest, "*"))
+
+		for _, color := range namedColors {
+			if strings.HasPrefix(rest, color) {
+				net.Color = ptr.To(color)
+				rest = strings.TrimSpace(strings.TrimPrefix(rest, color))
+				break
+			}
+		}
+
+		if net.Color == nil {
+			return jumperlessv5alpha1.Net{}, fmt.Errorf("unable to find color in net line %s: %w", netLine, ErrParseNetLine)
+		}
+
+		// At this point rest should look something like:
+		// "UART_Rx,D1"
+		// "UART_Tx,D0"
+		// "6,5"
+		// "A3,13"
+		// "51,D10"
+		// "ADC_3,20  \t    \b-6.69 V"
+		// "- f  GP_1,25   \t    input - floating"
+		// "- h  GP_4,36   \t    output - high"
+
+		// Check for content preceding the node list that we need to remove
+		// such as "- f", or "- h"
+		re := regexp.MustCompile(`^- [[:alpha:]]`)
+		if match := re.FindString(rest); match != "" {
+			// Remove the matched prefix
+			rest = strings.TrimSpace(strings.TrimPrefix(rest, match))
+		}
+
+		// at this point rest should look something like:
+		// "UART_Rx,D1"
+		// "UART_Tx,D0"
+		// "6,5"
+		// "A3,13"
+		// "51,D10"
+		// "ADC_3,20  \t    \b-6.69 V"
+		// "GP_1,25   \t    input - floating"
+		// "GP_4,36   \t    output - high"
+		before, after, found := strings.Cut(rest, "\t")
+		nodesPart = strings.TrimSpace(before)
+
+		if found {
+			net.Data = ptr.To(strings.TrimSpace(after))
+		}
 	}
 
-	net.Voltage = strings.TrimSpace(before) + "V" // ensure voltage is suffixed with "V"
-
-	nodesPart := strings.TrimSpace(after)
 	net.Nodes = []string{}
 
 	for node := range strings.SplitSeq(nodesPart, ",") {
@@ -288,8 +299,8 @@ func parseConfig(configOutput string) ([]jumperlessv5alpha1.JumperLessConfigSect
 	return jumperlessConfig, kerrors.NewAggregate(errs)
 }
 
-func GetConfig(ctx context.Context, portName string) ([]jumperlessv5alpha1.JumperLessConfigSection, error) {
-	configOutput, err := execRawCommand(ctx, portName, "~", 500*time.Millisecond)
+func GetConfig(j *jumperless.Jumperless) ([]jumperlessv5alpha1.JumperLessConfigSection, error) {
+	configOutput, err := j.ExecRawCommand("~", 500*time.Millisecond)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get current config: %w", err)
 	}
@@ -297,8 +308,8 @@ func GetConfig(ctx context.Context, portName string) ([]jumperlessv5alpha1.Jumpe
 	return parseConfig(configOutput)
 }
 
-func GetNets(ctx context.Context, portName string) ([]jumperlessv5alpha1.Net, error) {
-	netsOutput, err := execPythonCommand(ctx, portName, "print_nets()", 10*time.Millisecond)
+func GetNets(j *jumperless.Jumperless) ([]jumperlessv5alpha1.Net, error) {
+	netsOutput, err := j.ExecPythonCommand("print_nets()", 10*time.Millisecond)
 	if err != nil {
 		return nil, fmt.Errorf("unable to print nets: %w", err)
 	}
@@ -306,8 +317,8 @@ func GetNets(ctx context.Context, portName string) ([]jumperlessv5alpha1.Net, er
 	return parseNets(netsOutput)
 }
 
-func GetDAC(ctx context.Context, portName string, channel jumperlessv5alpha1.DACChannel) (string, error) {
-	dacVoltage, err := execPythonCommand(ctx, portName, fmt.Sprintf("dac_get(%d)", channel), 10*time.Millisecond)
+func GetDAC(j *jumperless.Jumperless, channel jumperlessv5alpha1.DACChannel) (string, error) {
+	dacVoltage, err := j.ExecPythonCommand(fmt.Sprintf("dac_get(%d)", channel), 10*time.Millisecond)
 	if err != nil {
 		return "", fmt.Errorf("unable to get DAC voltage for channel %s: %w", channel, err)
 	}
@@ -318,49 +329,4 @@ func GetDAC(ctx context.Context, portName string, channel jumperlessv5alpha1.DAC
 	}
 
 	return result, nil
-}
-
-func execPythonCommand(ctx context.Context, portName string, command string, waitForRead time.Duration) (string, error) {
-	log := ctrl.LoggerFrom(ctx)
-
-	result, err := execRawCommand(ctx, portName, ">"+command, waitForRead)
-	if err != nil {
-		return "", fmt.Errorf("failed to execute command: %w", err)
-	}
-
-	result = ansi.Strip(result) // Remove ANSI escape codes
-
-	// Split the output and strip the first and last lines
-	// Example output:
-	// Python> >dac_get(0)\r\n3.3V\r\n
-	// The first line is the command prompt, the last line is empty.
-	// The first line may also contain repeated substrings of the command and prompt
-	// since Jumperless is streaming the prompt back using ANSI escape codes.
-	resultLines := strings.Split(result, "\r\n")
-	if len(resultLines) < 3 {
-		log.Info("Unexpected command output format", "port", portName, "command", command, "result", result, "split", resultLines)
-		return "", fmt.Errorf("unexpected command output format: expected 3 lines, got %d %w", len(resultLines), ErrUnexpectedCommandOutput)
-	}
-
-	filtered := slices.Collect(func(yield func(string) bool) {
-		for _, line := range resultLines {
-			trimmed := strings.TrimSpace(line)
-			if trimmed != "" && !strings.HasPrefix(trimmed, "Python>") {
-				if !yield(trimmed) {
-					return
-				}
-			}
-		}
-	})
-
-	log.Info("Python command executed", "port", portName, "command", command, "result", result, "filteredResult", filtered)
-
-	switch len(filtered) {
-	case 0:
-		return "", fmt.Errorf("unexpected command output format: no output lines after filtering %w", ErrUnexpectedCommandOutput)
-	case 1:
-		return filtered[0], nil
-	default:
-		return strings.Join(filtered, "\n"), nil
-	}
 }

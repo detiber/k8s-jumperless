@@ -49,18 +49,14 @@ tidy: ## Run go mod tidy to clean up go.mod and go.sum files.
 
 .PHONY: tidy-emulator
 tidy-emulator: ## Run go mod tidy to clean up go.mod and go.sum files.
-	cd utils/jumperless-emulator; go mod tidy
+	cd utils/emulator; go mod tidy
 
 .PHONY: tidy-proxy
 tidy-proxy: ## Run go mod tidy to clean up go.mod and go.sum files.
-	cd utils/jumperless-proxy; go mod tidy
-
-.PHONY: tidy-test
-tidy-test: ## Run go mod tidy to clean up go.mod and go.sum files.
-	cd utils/test; go mod tidy
+	cd utils/proxy; go mod tidy
 
 .PHONY: tidy-all
-tidy-all: tidy tidy-emulator tidy-proxy tidy-test ## Run go mod tidy to clean up go.mod and go.sum files in all directories.
+tidy-all: tidy tidy-emulator tidy-proxy ## Run go mod tidy to clean up go.mod and go.sum files in all directories.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -75,7 +71,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt-all
-fmt-all: fmt fmt-emulator fmt-proxy fmt-test
+fmt-all: fmt fmt-emulator fmt-proxy
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -83,18 +79,14 @@ fmt: ## Run go fmt against code.
 
 .PHONY: fmt-emulator
 fmt-emulator: ## Run go fmt against emulator code.
-	cd utils/jumperless-emulator; go fmt ./...
+	cd utils/emulator; go fmt ./...
 
 .PHONY: fmt-proxy
 fmt-proxy: ## Run go fmt against proxy code.
-	cd utils/jumperless-proxy; go fmt ./...
-
-.PHONY: fmt-test
-fmt-test: ## Run go fmt against fully integrated test code.
-	cd utils/test; go fmt ./...
+	cd utils/proxy; go fmt ./...
 
 .PHONY: vet-all
-vet-all: vet vet-emulator vet-proxy vet-test
+vet-all: vet vet-emulator vet-proxy
 
 .PHONY: vet
 vet: ## Run go vet against code.
@@ -102,18 +94,14 @@ vet: ## Run go vet against code.
 
 .PHONY: vet-emulator
 vet-emulator: ## Run go vet against emulator code.
-	cd utils/jumperless-emulator; go vet ./...
+	cd utils/emulator; go vet ./...
 
 .PHONY: vet-proxy
 vet-proxy: ## Run go vet against proxy code.
-	cd utils/jumperless-proxy; go vet ./...
-
-.PHONY: vet-test
-vet-test: ## Run go vet against fully integrated test code.
-	cd utils/test; go vet ./...
+	cd utils/proxy; go vet ./...
 
 .PHONY: test-all
-test-all: test test-emulator test-proxy test-test
+test-all: test test-emulator test-proxy
 
 .PHONY: test
 test: gen-go manifests generate fmt vet setup-envtest ## Run tests.
@@ -121,15 +109,11 @@ test: gen-go manifests generate fmt vet setup-envtest ## Run tests.
 
 .PHONY: test-emulator
 test-emulator: fmt-emulator vet-emulator
-	cd utils/jumperless-emulator; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+	cd utils/emulator; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
 .PHONY: test-proxy
 test-proxy: fmt-proxy vet-proxy
-	cd utils/jumperless-proxy; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
-
-.PHONY: test-test
-test-test: fmt-test vet-test
-	cd utils/test; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+	cd utils/proxy; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
 
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
@@ -162,7 +146,7 @@ cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 .PHONY: lint-all
-lint-all: lint lint-emulator lint-proxy lint-test
+lint-all: lint lint-emulator lint-proxy
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
@@ -170,18 +154,14 @@ lint: golangci-lint ## Run golangci-lint linter
 
 .PHONY: lint-emulator
 lint-emulator: golangci-lint ## Run golangci-lint linter
-	cd utils/jumperless-emulator; $(GOLANGCI_LINT) run
+	cd utils/emulator; $(GOLANGCI_LINT) run
 
 .PHONY: lint-proxy
 lint-proxy: golangci-lint ## Run golangci-lint linter
-	cd utils/jumperless-proxy; $(GOLANGCI_LINT) run
-
-.PHONY: lint-test
-lint-test: golangci-lint ## Run golangci-lint linter
-	cd utils/test; $(GOLANGCI_LINT) run
+	cd utils/proxy; $(GOLANGCI_LINT) run
 
 .PHONY: lint-fix-all
-lint-fix-all: lint lint-emulator lint-proxy lint-test
+lint-fix-all: lint-fix lint-fix-emulator lint-fix-proxy
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
@@ -189,15 +169,11 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 
 .PHONY: lint-fix-emulator
 lint-fix-emulator: golangci-lint ## Run golangci-lint linter
-	cd utils/jumperless-emulator; $(GOLANGCI_LINT) run --fix
+	cd utils/emulator; $(GOLANGCI_LINT) run --fix
 
 .PHONY: lint-fix-proxy
 lint-fix-proxy: golangci-lint ## Run golangci-lint linter
-	cd utils/jumperless-proxy; $(GOLANGCI_LINT) run --fix
-
-.PHONY: lint-fix-test
-lint-fix-test: golangci-lint ## Run golangci-lint linter
-	cd utils/test; $(GOLANGCI_LINT) run --fix
+	cd utils/proxy; $(GOLANGCI_LINT) run --fix
 
 .PHONY: lint-config
 lint-config: golangci-lint ## Verify golangci-lint linter configuration
@@ -211,11 +187,11 @@ build: gen-go manifests generate fmt vet $(LOCALBIN) ## Build manager binary.
 
 .PHONY: build-emulator
 build-emulator: fmt vet $(LOCALBIN) ## Build jumperless emulator binary.
-	go build -C utils/jumperless-emulator -o $(LOCALBIN)/jumperless-emulator ./cmd
+	go build -C utils/emulator -o $(LOCALBIN)/emulator ./cmd
 
 .PHONY: build-proxy
 build-proxy: fmt vet $(LOCALBIN) ## Build jumperless proxy binary.
-	go build -C utils/jumperless-proxy -o $(LOCALBIN)/jumperless-proxy ./cmd
+	go build -C utils/proxy -o $(LOCALBIN)/proxy ./cmd
 
 .PHONY: build-all
 build-all: build build-emulator build-proxy ## Build all binaries.
@@ -326,7 +302,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.18.0
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-GOLANGCI_LINT_VERSION ?= v2.1.6
+GOLANGCI_LINT_VERSION ?= v2.4.0
 STRINGER_VERSION ?= latest
 
 .PHONY: kustomize

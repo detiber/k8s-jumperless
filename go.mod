@@ -1,6 +1,6 @@
 module github.com/detiber/k8s-jumperless
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/charmbracelet/x/ansi v0.10.1
@@ -104,4 +104,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/detiber/k8s-jumperless/utils/jumperless-emulator => ./utils/jumperless-emulator
+replace github.com/detiber/k8s-jumperless/utils/emulator => ./utils/emulator

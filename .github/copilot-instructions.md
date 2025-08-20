@@ -3,9 +3,8 @@ A Kubernetes operator built with Kubebuilder v4.7.1 that declaratively manages [
 
 The project includes comprehensive testing utilities:
 - **k8s-jumperless manager**: The main Kubernetes controller
-- **jumperless-emulator**: Hardware emulator for testing without physical devices
-- **jumperless-proxy**: Recording proxy for capturing real device interactions
-- **integration tests**: Full test suite supporting both emulated and real hardware
+- **emulator**: Hardware emulator for testing without physical devices
+- **proxy**: Recording proxy for capturing real device interactions
 
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
@@ -16,18 +15,18 @@ Run these commands in order to set up the development environment:
 
 1. **Download dependencies**: `go mod tidy` -- takes 40 seconds
    - For all modules: `make tidy-all` -- takes 2 minutes
-2. **Build the project**: `make build` -- takes 3 minutes. NEVER CANCEL. Set timeout to 5+ minutes.
+2. **Build the project**: `make build-all` -- takes 3 minutes. NEVER CANCEL. Set timeout to 5+ minutes.
    - Generates Go code with stringer
    - Generates CRDs and RBAC manifests with controller-gen  
    - Formats and vets Go code
    - Builds manager binary to `bin/manager`
-   - Builds emulator binary to `bin/jumperless-emulator`
-   - Builds proxy binary to `bin/jumperless-proxy`
+   - Builds emulator binary to `bin/emulator`
+   - Builds proxy binary to `bin/proxy`
 3. **Run tests**: `make test-all` -- takes 2 minutes. NEVER CANCEL. Set timeout to 4+ minutes.
    - Downloads and sets up the latest release of envtest binaries for latest release of Kubernetes
-   - Runs unit tests for manager, emulator, proxy, and integration test modules
+   - Runs unit tests for manager, emulator, and proxy modules
 4. **Run linter**: `make lint-all` -- takes 8 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
-   - Downloads golangci-lint v2.1.6
+   - Downloads golangci-lint v2.4.0
    - Runs extensive linting with 60+ enabled linters across all modules
 
 ### Development Workflow
@@ -39,8 +38,8 @@ Run these commands in order to set up the development environment:
 
 ### Utility Development
 - **Build utilities**: `make build-emulator build-proxy` -- builds utility binaries
-- **Test utilities**: `make test-emulator test-proxy test-test` -- runs utility tests
-- **Lint utilities**: `make lint-emulator lint-proxy lint-test` -- lints utility code
+- **Test utilities**: `make test-emulator test-proxy` -- runs utility tests
+- **Lint utilities**: `make lint-emulator lint-proxy` -- lints utility code
 
 ### Running the Operator
 - **Install manifests**: `make install` -- installs manifests to Kubernetes cluster
@@ -55,7 +54,8 @@ Run these commands in order to set up the development environment:
 ## Validation
 
 ### Always Run Before Committing
-1. **Build validation**: `make build` -- ensure clean build for all binaries
+1. **Module validation**: `make tidy-all` && check no changes with `git diff` (if changes exist, stage and commit them)
+1. **Build validation**: `make build-all` -- ensure clean build for all binaries
 2. **Test validation**: `make test-all` -- ensure all tests pass across all modules  
 3. **Lint validation**: `make lint-all` -- ensure code style compliance across all modules
 4. **Format validation**: `make fmt-all` && check no changes with `git diff` (if changes exist, stage and commit them)
@@ -73,6 +73,7 @@ After making changes to the operator:
    - **Note**: kubectl validation requires active cluster connection (use Kind if no cluster access)
 
 3. **Test controller logic**:
+   - Run `make test` to test controller logic
    - Review controller tests in `internal/controller/`
    - Add new test cases for new functionality
    - Ensure test coverage remains above 25% (use `go test -cover ./...` to check coverage)
@@ -83,10 +84,9 @@ After making changes to the operator:
    - Check that DAC channel constants work: `DAC0`, `DAC1`, `TOP_RAIL`, `BOTTOM_RAIL`
 
 5. **Test utilities**:
-   - Run `make test-emulator test-proxy test-test` to test all utilities
-   - Test emulator: `./bin/jumperless-emulator --help` should show cobra-based CLI
-   - Test proxy: `./bin/jumperless-proxy --help` should show recording options
-   - Integration tests: Check `utils/test/integration/` for hardware compatibility tests
+   - Run `make test-emulator test-proxy` to test all utilities
+   - Test emulator: `./bin/emulator --help` should show cobra-based CLI
+   - Test proxy: `./bin/proxy --help` should show recording options
 
 ### End-to-End Testing (Optional)
 E2E tests require Kind cluster setup but may fail in some environments:
@@ -104,10 +104,9 @@ E2E tests require Kind cluster setup but may fail in some environments:
 - **CRD manifests**: `config/crd/bases/`
 - **Sample resources**: `config/samples/`
 - **Build configuration**: `Makefile`
-- **Go module**: `go.mod` (Go 1.24+ required)
-- **Emulator utility**: `utils/jumperless-emulator/` (independent Go module)
-- **Proxy utility**: `utils/jumperless-proxy/` (independent Go module)
-- **Integration tests**: `utils/test/` (independent Go module)
+- **Go module**: `go.mod` (Go 1.25+ required)
+- **Emulator utility**: `utils/emulator/` (independent Go module)
+- **Proxy utility**: `utils/proxy/` (independent Go module)
 
 ### Repository Structure Quick Reference
 ```
@@ -120,10 +119,10 @@ E2E tests require Kind cluster setup but may fail in some environments:
 │   ├── rbac/              # Role-based access control
 │   └── samples/           # Example Jumperless resources
 ├── internal/controller/    # Controller implementation
+├── jumperless/             # Common code for interacting with Jumperless devices
 ├── utils/                  # Testing and development utilities
-│   ├── jumperless-emulator/ # Hardware emulator (independent Go module)
-│   ├── jumperless-proxy/   # Recording proxy (independent Go module)
-│   └── test/              # Integration tests (independent Go module)
+│   ├── emulator/ # Hardware emulator (independent Go module)
+│   ├── proxy/   # Recording proxy (independent Go module)
 ├── test/                  # E2E and utility test code
 ├── Makefile               # Build automation
 └── PROJECT                # Kubebuilder project metadata
@@ -139,8 +138,8 @@ The operator manages `Jumperless` resources with these key fields:
 
 ### Working with Testing Utilities
 
-#### Jumperless Emulator (`utils/jumperless-emulator`)
-A sophisticated hardware emulator for testing without physical devices:
+#### Jumperless Emulator (`utils/emulator`)
+A hardware emulator for testing without physical devices:
 - **Hardware simulation**: 4 DAC channels, 5 ADC channels, 2 INA sensors, 10 GPIO pins
 - **Node system**: Complete Jumperless node topology with constants and aliases
 - **Dynamic responses**: Placeholders that reflect current hardware state
@@ -149,10 +148,10 @@ A sophisticated hardware emulator for testing without physical devices:
 ```bash
 # Build and run emulator
 make build-emulator
-./bin/jumperless-emulator --config config.yaml --port /tmp/jumperless --verbose
+./bin/emulator --config config.yaml --port /tmp/jumperless --verbose
 ```
 
-#### Jumperless Proxy (`utils/jumperless-proxy`)
+#### Jumperless Proxy (`utils/proxy`)
 Recording proxy for capturing real device interactions:
 - **Transparent proxying**: Full serial configuration support
 - **Recording**: YAML, JSON, or log formats with timing capture
@@ -161,14 +160,8 @@ Recording proxy for capturing real device interactions:
 ```bash
 # Build and run proxy
 make build-proxy
-./bin/jumperless-proxy --real-port /dev/ttyUSB0 --virtual-port /tmp/proxy --recording-file session.yaml
+./bin/proxy --real-port /dev/ttyUSB0 --virtual-port /tmp/proxy --recording-file session.yaml
 ```
-
-#### Integration Tests (`utils/test`)
-Comprehensive test suite supporting both emulated and real hardware:
-- **Hardware compatibility**: Tests that work with emulator or real devices
-- **Protocol validation**: Ensures emulator accurately matches real hardware behavior
-- **Controller integration**: Tests operator functionality with emulated hardware
 
 ### Development Tips
 - Always run code generation (`make generate`, `make gen-go`, `make manifests`) after modifying API types
@@ -179,19 +172,17 @@ Comprehensive test suite supporting both emulated and real hardware:
 - Each utils subpackage has its own `go.mod` and can be built independently
 - Use `make tidy-all` to clean up all Go modules after dependency changes
 - The emulator and proxy use cobra/viper for CLI and configuration management
-- Integration tests in `utils/test/` work with both emulated and real hardware
 
 ### CI Integration
-This development workflow mirrors the CI process. CI enforces build, test, and lint validation for all contributions across all modules (manager, emulator, proxy, and integration tests).
+This development workflow mirrors the CI process. CI enforces build, test, and lint validation for all contributions across all modules (manager, emulator, and proxy).
 
 ### Common Error Scenarios
-- **Build fails**: Run `go mod tidy` or `make tidy-all` first, ensure Go 1.24+ installed (check `go.mod` for current version requirements)
+- **Build fails**: Run `go mod tidy` or `make tidy-all` first, ensure Go 1.25+ installed (check `go.mod` for current version requirements)
 - **Tests fail**: Check envtest setup, may need different Kubernetes version
 - **Lint fails**: Review `.golangci.yml` for enabled linters, use `make lint-fix-all` for auto-fixes across all modules
 - **Manager won't start**: Ensure valid kubeconfig and cluster connectivity, try creating a kind cluster
 - **E2E tests fail**: Kind cluster creation issues, requires working Docker runtime
 - **Emulator/Proxy build fails**: Check `utils/*/go.mod` for module dependencies, run `make tidy-all`
-- **Integration tests fail**: Ensure emulator is built (`make build-emulator`) and working correctly
 
 ### Performance Expectations
 - **Initial setup**: ~10-12 minutes (mod download + build + test + lint across all modules)

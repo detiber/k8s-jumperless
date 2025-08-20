@@ -6,19 +6,19 @@ permissions:
 on:
   push:
     paths:
-      - 'utils/jumperless-emulator/**'
+      - 'utils/emulator/**'
     branches:
       - main
     tags:
       - 'v*'
   pull_request:
     paths:
-      - 'utils/jumperless-emulator/**'
+      - 'utils/emulator/**'
 
 jobs:
   lint-emulator:
     uses: ./.github/workflows/_lint.yml
     with:
-      go-version-file: "utils/jumperless-emulator/go.mod"
-      go-cache-dependency-path: "utils/jumperless-emulator/go.sum"
-      module-working-directory: "utils/jumperless-emulator"
+      go-version-file: "utils/emulator/go.mod"
+      go-cache-dependency-path: "utils/emulator/go.sum"
+      module-working-directory: "utils/emulator"

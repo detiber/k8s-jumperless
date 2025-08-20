@@ -1,39 +1,48 @@
 # Build the proxy binary
-FROM golang:1.24 AS builder-proxy
+FROM golang:1.25 AS builder-proxy
 ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY utils/jumperless-emulator/go.mod utils/jumperless-emulator/go.mod
-COPY utils/jumperless-emulator/go.sum utils/jumperless-emulator/go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN cd utils/jumperless-emulator && go mod download
 
-COPY utils/jumperless-proxy/go.mod utils/jumperless-proxy/go.mod
-COPY utils/jumperless-proxy/go.sum utils/jumperless-proxy/go.sum
+# Copy the main Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN cd utils/jumperless-proxy && go mod download
+RUN go mod download
+
+# Copy the emulator Go Modules manifests
+COPY utils/emulator/go.mod utils/emulator/go.mod
+COPY utils/emulator/go.sum utils/emulator/go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN cd utils/emulator && go mod download
+
+# Copy the proxy Go Modules manifests
+COPY utils/proxy/go.mod utils/proxy/go.mod
+COPY utils/proxy/go.sum utils/proxy/go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN cd utils/proxy && go mod download
 
 # Copy the go source
-COPY utils/jumperless-proxy/cmd/ utils/jumperless-proxy/cmd/
-COPY utils/jumperless-emulator/emulator/ utils/jumperless-emulator/emulator/
-COPY utils/jumperless-proxy/proxy/ utils/jumperless-proxy/proxy/
+COPY jumperless/ jumperless/
+COPY utils/proxy/cmd/ utils/proxy/cmd/
+COPY utils/emulator/emulator/ utils/emulator/emulator/
+COPY utils/proxy/proxy/ utils/proxy/proxy/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN cd utils/jumperless-proxy && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o jumperless-proxy ./cmd
+RUN cd utils/proxy && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ../../proxy ./cmd
 
 # Use distroless as minimal base image to package the proxy binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:latest
 WORKDIR /
-COPY --from=builder-proxy /workspace/utils/jumperless-proxy/jumperless-proxy .
-USER 65532:65532
+COPY --from=builder-proxy /workspace/proxy .
 
-ENTRYPOINT ["/jumperless-proxy"]
+ENTRYPOINT ["/proxy"]
