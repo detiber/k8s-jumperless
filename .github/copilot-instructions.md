@@ -16,7 +16,7 @@ Run these commands in order to set up the development environment:
 
 1. **Download dependencies**: `go mod tidy` -- takes 40 seconds
    - For all modules: `make tidy-all` -- takes 2 minutes
-2. **Build the project**: `make build` -- takes 3 minutes. NEVER CANCEL. Set timeout to 5+ minutes.
+2. **Build the project**: `make build-all` -- takes 3 minutes. NEVER CANCEL. Set timeout to 5+ minutes.
    - Generates Go code with stringer
    - Generates CRDs and RBAC manifests with controller-gen  
    - Formats and vets Go code
@@ -55,7 +55,8 @@ Run these commands in order to set up the development environment:
 ## Validation
 
 ### Always Run Before Committing
-1. **Build validation**: `make build` -- ensure clean build for all binaries
+1. **Module validation**: `make tidy-all` && check no changes with `git diff` (if changes exist, stage and commit them)
+1. **Build validation**: `make build-all` -- ensure clean build for all binaries
 2. **Test validation**: `make test-all` -- ensure all tests pass across all modules  
 3. **Lint validation**: `make lint-all` -- ensure code style compliance across all modules
 4. **Format validation**: `make fmt-all` && check no changes with `git diff` (if changes exist, stage and commit them)
@@ -73,6 +74,7 @@ After making changes to the operator:
    - **Note**: kubectl validation requires active cluster connection (use Kind if no cluster access)
 
 3. **Test controller logic**:
+   - Run `make test` to test controller logic
    - Review controller tests in `internal/controller/`
    - Add new test cases for new functionality
    - Ensure test coverage remains above 25% (use `go test -cover ./...` to check coverage)
@@ -140,7 +142,7 @@ The operator manages `Jumperless` resources with these key fields:
 ### Working with Testing Utilities
 
 #### Jumperless Emulator (`utils/jumperless-emulator`)
-A sophisticated hardware emulator for testing without physical devices:
+A hardware emulator for testing without physical devices:
 - **Hardware simulation**: 4 DAC channels, 5 ADC channels, 2 INA sensors, 10 GPIO pins
 - **Node system**: Complete Jumperless node topology with constants and aliases
 - **Dynamic responses**: Placeholders that reflect current hardware state
