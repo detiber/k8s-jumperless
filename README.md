@@ -102,31 +102,46 @@ make undeploy
 
 ## Development Tools
 
-### Building Emulator and Proxy Tools
+The project includes sophisticated testing utilities in the `/utils/` directory, each as independent Go submodules:
 
-Build all binaries including the emulator and proxy:
+- **`/utils/jumperless-emulator/`** - Comprehensive hardware emulator with realistic device simulation
+- **`/utils/jumperless-proxy/`** - Recording proxy for capturing real device interactions  
+- **`/utils/test/`** - Integration test suite
+
+### Building Tools
+
+Build all binaries including the operator, emulator and proxy:
 
 ```sh
-make build-all
+make build  # Builds manager + emulator + proxy
 ```
 
-Or build individually:
+Or build components individually:
 
 ```sh
-make build-emulator  # Build jumperless-emulator
-make build-proxy     # Build jumperless-proxy
+make build-manager    # Build k8s-jumperless manager only
+make build-emulator   # Build jumperless-emulator
+make build-proxy      # Build jumperless-proxy  
 ```
 
 ### Testing with Emulator
 
-For development and testing without hardware:
+The emulator provides comprehensive hardware simulation with cobra/viper CLI:
 
 ```sh
-# Generate and start emulator
-./bin/jumperless-emulator -generate-config examples/emulator-config.yaml
-./bin/jumperless-emulator -config examples/emulator-config.yaml -verbose &
+# Generate default configuration with full hardware emulation
+./bin/jumperless-emulator --generate-config examples/emulator-config.yaml
 
-# Run tests
+# Start emulator with enhanced CLI
+./bin/jumperless-emulator \
+  --config examples/emulator-config.yaml \
+  --port /tmp/jumperless \
+  --baud-rate 115200 \
+  --stop-bits 1 \
+  --parity none \
+  --verbose
+
+# Run tests against the emulated device
 make test
 
 # Cleanup
@@ -135,17 +150,32 @@ pkill jumperless-emulator
 
 ### Recording with Proxy
 
-To record real device interactions for testing:
+The proxy records real device interactions with full serial configuration support:
 
 ```sh
-# Start proxy (requires real Jumperless device)
+# Start proxy with enhanced CLI (requires real Jumperless device)
 ./bin/jumperless-proxy \
-  -real-port /dev/ttyUSB0 \
-  -virtual-port /tmp/jumperless-proxy \
-  -recording-file recordings/session.yaml \
-  -verbose &
+  --real-port /dev/ttyUSB0 \
+  --virtual-port /tmp/jumperless-proxy \
+  --recording-file recordings/session.yaml \
+  --stop-bits 1 \
+  --parity none \
+  --verbose
 
 # Use the virtual port for testing, then stop proxy to save recording
+```
+
+### Docker Support
+
+Each utility has its own Docker support with multi-stage builds:
+
+```sh
+# Build utility Docker images
+make docker-build  # Builds all images (manager + emulator + proxy)
+
+# Or build individually  
+cd utils/jumperless-emulator && docker build -t jumperless-emulator .
+cd utils/jumperless-proxy && docker build -t jumperless-proxy .
 ```
 
 See [docs/emulator-proxy.md](docs/emulator-proxy.md) for detailed documentation.
