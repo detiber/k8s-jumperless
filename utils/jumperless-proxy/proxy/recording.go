@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
+	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,10 +35,25 @@ var (
 	ErrUnsupportedConfigFileFormat = errors.New("unsupported config file format (use .yaml, .yml, or .json)")
 )
 
+// RecordEntry represents a single recorded interaction
+type RecordEntry struct {
+	Timestamp time.Time     `json:"timestamp"          yaml:"timestamp"`
+	Direction string        `json:"direction"          yaml:"direction"` // "request" or "response"
+	Data      string        `json:"data"               yaml:"data"`
+	Duration  time.Duration `json:"duration,omitempty" yaml:"duration,omitempty"` // Response time
+}
+
+// Recording represents a collection of recorded interactions
+type Recording struct {
+	StartTime time.Time     `json:"startTime" yaml:"startTime"`
+	EndTime   time.Time     `json:"endTime"   yaml:"endTime"`
+	Entries   []RecordEntry `json:"entries"   yaml:"entries"`
+}
+
 // saveRecording saves the recorded data to a file
 func (p *Proxy) saveRecording() error {
 	// Create directory if it doesn't exist
-	dir := filepath.Dir(p.config.Recording.OutputFile)
+	dir := filepath.Dir(p.config.Recording.File)
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
@@ -45,7 +61,7 @@ func (p *Proxy) saveRecording() error {
 	var data []byte
 	var err error
 
-	switch strings.ToLower(p.config.Recording.OutputFormat) {
+	switch strings.ToLower(p.config.Recording.Format) {
 	case "yaml", "yml":
 		data, err = yaml.Marshal(p.recording)
 		if err != nil {
@@ -59,11 +75,11 @@ func (p *Proxy) saveRecording() error {
 	case "log":
 		data = []byte(p.formatAsLog())
 	default:
-		return fmt.Errorf("%w: %s", ErrUnsupportedOutputFormat, p.config.Recording.OutputFormat)
+		return fmt.Errorf("%w: %s", ErrUnsupportedOutputFormat, p.config.Recording.Format)
 	}
 
-	if err := os.WriteFile(p.config.Recording.OutputFile, data, 0600); err != nil {
-		return fmt.Errorf("failed to write recording file %s: %w", p.config.Recording.OutputFile, err)
+	if err := os.WriteFile(p.config.Recording.File, data, 0600); err != nil {
+		return fmt.Errorf("failed to write recording file %s: %w", p.config.Recording.File, err)
 	}
 
 	return nil
@@ -202,9 +218,9 @@ func (p *Proxy) SaveEmulatorConfig(filename string) error {
 }
 
 // LoadConfig loads proxy configuration from a file
-func LoadConfig(filename string) (*Config, error) {
+func LoadConfig(filename string) (*config.ProxyConfig, error) {
 	if filename == "" {
-		return DefaultConfig(), nil
+		return config.DefaultConfig(), nil
 	}
 
 	data, err := os.ReadFile(filename)
@@ -212,7 +228,7 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config file %s: %w", filename, err)
 	}
 
-	config := &Config{}
+	config := &config.ProxyConfig{}
 
 	// Determine file format based on extension
 	ext := strings.ToLower(filepath.Ext(filename))
@@ -238,7 +254,7 @@ func LoadConfig(filename string) (*Config, error) {
 }
 
 // SaveConfig saves proxy configuration to a file
-func SaveConfig(config *Config, filename string) error {
+func SaveConfig(config *config.ProxyConfig, filename string) error {
 	var data []byte
 	var err error
 
@@ -273,35 +289,35 @@ func SaveConfig(config *Config, filename string) error {
 }
 
 // validateConfig validates and sets defaults for proxy configuration
-func validateConfig(config *Config) error {
+func validateConfig(config *config.ProxyConfig) error {
 	// Set default virtual port config
-	if config.VirtualPort.BaudRate == 0 {
-		config.VirtualPort.BaudRate = 115200
+	if config.BaudRate == 0 {
+		config.BaudRate = 115200
 	}
-	if config.VirtualPort.BufferSize == 0 {
-		config.VirtualPort.BufferSize = 1024
+	if config.BufferSize == 0 {
+		config.BufferSize = 1024
 	}
-	if config.VirtualPort.Port == "" {
-		config.VirtualPort.Port = "/tmp/jumperless-proxy"
+	if config.VirtualPort == "" {
+		config.VirtualPort = "/tmp/jumperless-proxy"
 	}
 
 	// Set default real port config
-	if config.RealPort.BaudRate == 0 {
-		config.RealPort.BaudRate = 115200
+	if config.BaudRate == 0 {
+		config.BaudRate = 115200
 	}
-	if config.RealPort.BufferSize == 0 {
-		config.RealPort.BufferSize = 1024
+	if config.BufferSize == 0 {
+		config.BufferSize = 1024
 	}
-	if config.RealPort.Port == "" {
-		config.RealPort.Port = "/dev/ttyUSB0"
+	if config.RealPort == "" {
+		config.RealPort = "/dev/ttyUSB0"
 	}
 
 	// Set default recording config
-	if config.Recording.OutputFormat == "" {
-		config.Recording.OutputFormat = "yaml"
+	if config.Recording.Format == "" {
+		config.Recording.Format = "yaml"
 	}
-	if config.Recording.OutputFile == "" {
-		config.Recording.OutputFile = "jumperless-recording.yaml"
+	if config.Recording.File == "" {
+		config.Recording.File = "jumperless-recording.yaml"
 	}
 
 	return nil

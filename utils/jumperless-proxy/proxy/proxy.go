@@ -26,11 +26,13 @@ import (
 
 	"github.com/creack/pty"
 	"go.bug.st/serial"
+
+	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy/config"
 )
 
 // Proxy represents a serial port proxy that records communication
 type Proxy struct {
-	config    *Config
+	config    *config.ProxyConfig
 	ptmx      *os.File // Master side of pty (virtual port)
 	pts       *os.File // Slave side of pty (virtual port)
 	realPort  serial.Port
@@ -40,7 +42,7 @@ type Proxy struct {
 }
 
 // New creates a new proxy instance
-func New(config *Config, logger *log.Logger) (*Proxy, error) {
+func New(config *config.ProxyConfig, logger *log.Logger) (*Proxy, error) {
 	if logger == nil {
 		logger = log.New(os.Stdout, "[proxy] ", log.LstdFlags)
 	}
@@ -68,33 +70,33 @@ func (p *Proxy) Start(ctx context.Context) error {
 	p.pts = pts
 
 	// Create symlink to the configured virtual port name if specified
-	if p.config.VirtualPort.Port != "" && p.config.VirtualPort.Port != pts.Name() {
+	if p.config.VirtualPort != "" && p.config.VirtualPort != pts.Name() {
 		// Remove existing symlink if it exists
-		if err := os.Remove(p.config.VirtualPort.Port); err != nil && !os.IsNotExist(err) {
-			p.logger.Printf("Warning: failed to remove existing virtual port %s: %v", p.config.VirtualPort.Port, err)
+		if err := os.Remove(p.config.VirtualPort); err != nil && !os.IsNotExist(err) {
+			p.logger.Printf("Warning: failed to remove existing virtual port %s: %v", p.config.VirtualPort, err)
 		}
 
 		// Create symlink
-		if err := os.Symlink(pts.Name(), p.config.VirtualPort.Port); err != nil {
-			return fmt.Errorf("failed to create symlink %s -> %s: %w", p.config.VirtualPort.Port, pts.Name(), err)
+		if err := os.Symlink(pts.Name(), p.config.VirtualPort); err != nil {
+			return fmt.Errorf("failed to create symlink %s -> %s: %w", p.config.VirtualPort, pts.Name(), err)
 		}
-		p.logger.Printf("Created virtual serial port: %s -> %s", p.config.VirtualPort.Port, pts.Name())
+		p.logger.Printf("Created virtual serial port: %s -> %s", p.config.VirtualPort, pts.Name())
 	} else {
 		p.logger.Printf("Created virtual serial port: %s", pts.Name())
 	}
 
 	// Open real serial port
 	mode := &serial.Mode{
-		BaudRate: p.config.RealPort.BaudRate,
+		BaudRate: p.config.BaudRate,
 	}
 
-	realPort, err := serial.Open(p.config.RealPort.Port, mode)
+	realPort, err := serial.Open(p.config.RealPort, mode)
 	if err != nil {
-		return fmt.Errorf("failed to open real serial port %s: %w", p.config.RealPort.Port, err)
+		return fmt.Errorf("failed to open real serial port %s: %w", p.config.RealPort, err)
 	}
 
 	p.realPort = realPort
-	p.logger.Printf("Connected to real serial port: %s", p.config.RealPort.Port)
+	p.logger.Printf("Connected to real serial port: %s", p.config.RealPort)
 
 	// Start proxy goroutines
 	go p.proxyVirtualToReal(ctx)
@@ -125,19 +127,19 @@ func (p *Proxy) Stop() error {
 	}
 
 	// Clean up symlink if we created one
-	if p.config.VirtualPort.Port != "" {
-		if err := os.Remove(p.config.VirtualPort.Port); err != nil && !os.IsNotExist(err) {
-			p.logger.Printf("Warning: failed to clean up virtual port symlink %s: %v", p.config.VirtualPort.Port, err)
+	if p.config.VirtualPort != "" {
+		if err := os.Remove(p.config.VirtualPort); err != nil && !os.IsNotExist(err) {
+			p.logger.Printf("Warning: failed to clean up virtual port symlink %s: %v", p.config.VirtualPort, err)
 		}
 	}
 
 	// Save recording
-	if p.config.Recording.Enabled && len(p.recording.Entries) > 0 {
+	if len(p.recording.Entries) > 0 {
 		p.recording.EndTime = time.Now()
 		if err := p.saveRecording(); err != nil {
 			p.logger.Printf("Error saving recording: %v", err)
 		} else {
-			p.logger.Printf("Recording saved to: %s", p.config.Recording.OutputFile)
+			p.logger.Printf("Recording saved to: %s", p.config.Recording.File)
 		}
 	}
 
@@ -146,8 +148,8 @@ func (p *Proxy) Stop() error {
 
 // GetVirtualPortName returns the virtual port name
 func (p *Proxy) GetVirtualPortName() string {
-	if p.config.VirtualPort.Port != "" {
-		return p.config.VirtualPort.Port
+	if p.config.VirtualPort != "" {
+		return p.config.VirtualPort
 	}
 	if p.pts != nil {
 		return p.pts.Name()
@@ -157,7 +159,7 @@ func (p *Proxy) GetVirtualPortName() string {
 
 // proxyVirtualToReal forwards data from virtual port to real port (requests)
 func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
-	buffer := make([]byte, p.config.VirtualPort.BufferSize)
+	buffer := make([]byte, p.config.BufferSize)
 
 	for {
 		select {
@@ -189,9 +191,7 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				data := buffer[:n]
 
 				// Record request
-				if p.config.Recording.Enabled {
-					p.recordEntry("request", string(data), 0)
-				}
+				p.recordEntry("request", string(data), 0)
 
 				// Forward to real port
 				if _, err := p.realPort.Write(data); err != nil {
@@ -206,7 +206,7 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 
 // proxyRealToVirtual forwards data from real port to virtual port (responses)
 func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
-	buffer := make([]byte, p.config.RealPort.BufferSize)
+	buffer := make([]byte, p.config.BufferSize)
 
 	for {
 		select {
@@ -237,9 +237,7 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 				data := buffer[:n]
 
 				// Record response
-				if p.config.Recording.Enabled {
-					p.recordEntry("response", string(data), duration)
-				}
+				p.recordEntry("response", string(data), duration)
 
 				// Forward to virtual port
 				if _, err := p.ptmx.Write(data); err != nil {

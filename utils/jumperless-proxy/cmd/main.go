@@ -32,22 +32,18 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy"
+	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy/config"
 )
 
 const (
-	defaultConfigFile         = "jumperless-proxy.yml"
-	cfgConfig                 = "config"
-	cfgGenerateConfig         = "generate-config"
-	cfgVerbose                = "verbose"
-	cfgSerialPort             = "serial.port"
-	cfgSerialVirtualPort      = "serial.virtual-port"
-	cfgSerialBaudRate         = "serial.baud-rate"
-	cfgSerialStopBits         = "serial.stop-bits"
-	cfgSerialParity           = "serial.parity"
-	cfgRecordingFile          = "recording.file"
-	cfgRecordingFormat        = "recording.format"
-	cfgDisableRecording       = "recording.disable"
-	cfgGenerateEmulatorConfig = "generate-emulator-config"
+	defaultConfigFile = "jumperless-proxy.yml"
+	cfgConfig         = "config"
+	cfgGenerateConfig = "generate-config"
+	cfgVerbose        = "verbose"
+	cfgRealPort       = "real-port"
+	cfgVirtualPort    = "virtual-port"
+	cfgBaudRate       = "baud-rate"
+	cfgShowConfig     = "show-config"
 )
 
 func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue bool, description string) {
@@ -77,71 +73,30 @@ func configFlags(cmd *cobra.Command, v *viper.Viper) {
 	configStringVar(
 		cmd.PersistentFlags(),
 		v,
-		cfgSerialPort,
+		cfgRealPort,
 		"",
-		"serial port path (e.g. /dev/ttyUSB0) (overrides config)",
+		"serial port path (e.g. /dev/ttyUSB0)",
 	)
 
 	configStringVar(
 		cmd.PersistentFlags(),
 		v,
-		cfgSerialVirtualPort,
+		cfgVirtualPort,
 		"",
-		"virtual port path (overrides config)",
+		"virtual port path (e.g. /tmp/jumperless-proxy)",
 	)
 
 	configIntVar(
 		cmd.PersistentFlags(),
 		v,
-		cfgSerialBaudRate,
-		0,
-		"baud rate (e.g. 9600) (overrides config)",
-	)
-
-	configIntVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgSerialStopBits,
-		0,
-		"stop bits: 1 or 2 (overrides config)",
-	)
-
-	configStringVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgSerialParity,
-		"",
-		"parity: none, odd, even, mark, space (overrides config)",
-	)
-
-	// Recording flags
-	configStringVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgRecordingFile,
-		"",
-		"recording output file (overrides config)",
-	)
-
-	configStringVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgRecordingFormat,
-		"",
-		"recording format: yaml, json, log (overrides config)",
-	)
-
-	configBoolVar(
-		cmd.PersistentFlags(),
-		v,
-		cfgDisableRecording,
-		false,
-		"disable recording",
+		cfgBaudRate,
+		config.DefaultBaudRate,
+		"baud rate (e.g. 9600)",
 	)
 
 	// Utility flags
 	cmd.Flags().Bool(cfgGenerateConfig, false, "generate default config file and exit")
-	cmd.Flags().Bool(cfgGenerateEmulatorConfig, false, "generate emulator config from recording and exit")
+	cmd.Flags().Bool(cfgShowConfig, false, "show current configuration and exit")
 }
 
 func main() {
@@ -187,6 +142,7 @@ to capture communication patterns for emulator configuration generation.`,
 					fmt.Fprintf(os.Stderr, "No config file specified, using the default config values: %+v\n", defaultConfigValues)
 				} else {
 					fmt.Fprintf(os.Stderr, "Using config file: %s\n", v.ConfigFileUsed())
+					fmt.Fprintf(os.Stderr, "Config values: %+v\n", v.AllSettings())
 				}
 			}
 
@@ -198,19 +154,40 @@ to capture communication patterns for emulator configuration generation.`,
 				return fmt.Errorf("failed to get config flag: %w", err)
 			}
 
+			shouldShowConfig, err := cmd.Flags().GetBool(cfgShowConfig)
+			if err != nil {
+				return fmt.Errorf("failed to get show-config flag: %w", err)
+			}
+
 			shouldGenerateConfig, err := cmd.Flags().GetBool(cfgGenerateConfig)
 			if err != nil {
 				return fmt.Errorf("failed to get generate-config flag: %w", err)
 			}
 
-			if shouldGenerateConfig {
-				if err := generateConfig(v, configFile); err != nil {
-					return fmt.Errorf("failed to generate config: %w", err)
+			switch {
+			case shouldShowConfig:
+				// Write current config to stdout
+				if err := v.WriteConfigTo(os.Stdout); err != nil {
+					return fmt.Errorf("failed to write current config: %w", err)
 				}
-				return nil
-			}
 
-			return runProxy(v, cmd)
+				return nil
+			case shouldGenerateConfig && configFile == "":
+				// Generate default config file
+				if err := v.SafeWriteConfig(); err != nil {
+					return fmt.Errorf("failed to generate config file: %w", err)
+				}
+
+				if configFile == "" {
+					configFile = defaultConfigFile
+				}
+
+				fmt.Printf("Generated default config file: %s\n", configFile)
+
+				return nil
+			default:
+				return runProxy(v, cmd)
+			}
 		},
 	}
 
@@ -222,20 +199,6 @@ to capture communication patterns for emulator configuration generation.`,
 	}
 }
 
-func generateConfig(v *viper.Viper, configFile string) error {
-	// Generate default config file
-	if err := v.SafeWriteConfig(); err != nil {
-		return fmt.Errorf("failed to generate config file: %w", err)
-	}
-
-	if configFile == "" {
-		configFile = defaultConfigFile
-	}
-
-	fmt.Printf("Generated default config file: %s\n", configFile)
-	return nil
-}
-
 func runProxy(v *viper.Viper, cmd *cobra.Command) error {
 	// Setup logger
 	logger := log.New(os.Stdout, "[jumperless-proxy] ", log.LstdFlags)
@@ -243,22 +206,16 @@ func runProxy(v *viper.Viper, cmd *cobra.Command) error {
 		logger.SetOutput(os.Stderr)
 	}
 
-	// Load configuration
-	config, err := loadConfigWithOverrides(v)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+	proxyConfig := config.DefaultConfig()
+
+	if err := v.Unmarshal(proxyConfig); err != nil {
+		return fmt.Errorf("failed to unmarshal current config: %w", err)
 	}
 
-	logger.Printf("Starting Jumperless proxy with config:")
-	logger.Printf("  Virtual port: %s (baud: %d, stopBits: %d, parity: %s)",
-		config.VirtualPort.Port, config.VirtualPort.BaudRate, config.VirtualPort.StopBits, config.VirtualPort.Parity)
-	logger.Printf("  Real port: %s (baud: %d, stopBits: %d, parity: %s)",
-		config.RealPort.Port, config.RealPort.BaudRate, config.RealPort.StopBits, config.RealPort.Parity)
-	logger.Printf("  Recording: %v (file: %s, format: %s)",
-		config.Recording.Enabled, config.Recording.OutputFile, config.Recording.OutputFormat)
+	logger.Printf("Starting Jumperless proxy with config: %+v", proxyConfig)
 
 	// Create proxy
-	p, err := proxy.New(config, logger)
+	p, err := proxy.New(proxyConfig, logger)
 	if err != nil {
 		return fmt.Errorf("failed to create proxy: %w", err)
 	}
@@ -305,50 +262,4 @@ func runProxy(v *viper.Viper, cmd *cobra.Command) error {
 
 	logger.Printf("Proxy stopped")
 	return nil
-}
-
-func loadConfigWithOverrides(v *viper.Viper) (*proxy.Config, error) {
-	// Start with default config
-	config := proxy.DefaultConfig()
-
-	// Load from file if available
-	if v.ConfigFileUsed() != "" {
-		var err error
-		config, err = proxy.LoadConfig(v.ConfigFileUsed())
-		if err != nil {
-			return nil, fmt.Errorf("failed to load proxy config from file %s: %w", v.ConfigFileUsed(), err)
-		}
-	}
-
-	// Apply command line overrides
-	if v.IsSet(cfgSerialVirtualPort) {
-		config.VirtualPort.Port = v.GetString(cfgSerialVirtualPort)
-	}
-	if v.IsSet(cfgSerialPort) {
-		config.RealPort.Port = v.GetString(cfgSerialPort)
-	}
-	if v.IsSet(cfgSerialBaudRate) && v.GetInt(cfgSerialBaudRate) > 0 {
-		config.VirtualPort.BaudRate = v.GetInt(cfgSerialBaudRate)
-		config.RealPort.BaudRate = v.GetInt(cfgSerialBaudRate)
-	}
-	if v.IsSet(cfgSerialStopBits) && v.GetInt(cfgSerialStopBits) > 0 {
-		config.VirtualPort.StopBits = v.GetInt(cfgSerialStopBits)
-		config.RealPort.StopBits = v.GetInt(cfgSerialStopBits)
-	}
-	if v.IsSet(cfgSerialParity) {
-		config.VirtualPort.Parity = v.GetString(cfgSerialParity)
-		config.RealPort.Parity = v.GetString(cfgSerialParity)
-	}
-	if v.IsSet(cfgRecordingFile) {
-		config.Recording.OutputFile = v.GetString(cfgRecordingFile)
-	}
-	if v.IsSet(cfgRecordingFormat) {
-		config.Recording.OutputFormat = v.GetString(cfgRecordingFormat)
-	}
-	if v.IsSet(cfgDisableRecording) {
-		// Note: disable-recording flag inverts the logic
-		config.Recording.Enabled = !v.GetBool(cfgDisableRecording)
-	}
-
-	return config, nil
 }
