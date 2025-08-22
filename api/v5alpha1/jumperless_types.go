@@ -132,8 +132,18 @@ type Net struct {
 	// Examples of valid values: "0V", "3.3V", "-1.5V", "7.8V"
 	// Examples of invalid values: "10V", "-9V", "3.33V", "abc"
 	// +kubebuilder:validation:Pattern=`^(-?([0-7](\.[0-9]{1,2})?|8(\.0{1,2})?))V$`
-	// +required
-	Voltage string `json:"voltage"`
+	// +optional
+	Voltage *string `json:"voltage,omitempty"`
+
+	// Color is the color of the net.
+	// Valid values are standard color names like "red", "green", "blue", etc.
+	// +optional
+	Color *string `json:"color,omitempty"`
+
+	// Data includes any additional data associated with the net.
+	// This field is optional and may be empty.
+	// +optional
+	Data *string `json:"data,omitempty"`
 
 	// Nodes is a list of node identifiers that are part of this net.
 	// Each node identifier is a string that uniquely identifies a node on the Jumperless device.

@@ -277,6 +277,16 @@ spec:
                   This field is populated by the controller after successfully connecting to the device.
                 items:
                   properties:
+                    color:
+                      description: |-
+                        Color is the color of the net.
+                        Valid values are standard color names like "red", "green", "blue", etc.
+                      type: string
+                    data:
+                      description: |-
+                        Data includes any additional data associated with the net.
+                        This field is optional and may be empty.
+                      type: string
                     index:
                       description: Index is the index of the net.
                       format: int32
@@ -305,7 +315,6 @@ spec:
                   - index
                   - name
                   - nodes
-                  - voltage
                   type: object
                 type: array
                 x-kubernetes-list-map-keys:
