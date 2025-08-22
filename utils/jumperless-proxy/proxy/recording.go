@@ -65,6 +65,7 @@ type Recorder struct {
 
 // NewRecorder creates a new Recorder instance
 func NewRecorder(logger *log.Logger, filename string, emulatorConfigFile string) *Recorder {
+
 	return &Recorder{
 		recChan:            make(chan RecordEntry),
 		entries:            []RecordEntry{},
