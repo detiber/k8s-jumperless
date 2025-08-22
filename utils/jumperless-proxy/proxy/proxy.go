@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/detiber/k8s-jumperless/utils/jumperless"
 	"go.bug.st/serial"
 
 	"github.com/detiber/k8s-jumperless/utils/jumperless-proxy/proxy/config"
@@ -42,13 +43,13 @@ type Proxy struct {
 }
 
 // New creates a new proxy instance
-func New(config *config.ProxyConfig, logger *log.Logger) (*Proxy, error) {
+func New(c *config.ProxyConfig, logger *log.Logger) (*Proxy, error) {
 	if logger == nil {
 		logger = log.New(os.Stdout, "[proxy] ", log.LstdFlags)
 	}
 
 	return &Proxy{
-		config:   config,
+		config:   c,
 		logger:   logger,
 		shutdown: make(chan struct{}),
 		recording: &Recording{
@@ -78,6 +79,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 
 		// Create symlink
 		if err := os.Symlink(pts.Name(), p.config.VirtualPort); err != nil {
+			p.tryCloseVirtualPorts() // Clean up if symlink creation fails
 			return fmt.Errorf("failed to create symlink %s -> %s: %w", p.config.VirtualPort, pts.Name(), err)
 		}
 		p.logger.Printf("Created virtual serial port: %s -> %s", p.config.VirtualPort, pts.Name())
@@ -88,6 +90,23 @@ func (p *Proxy) Start(ctx context.Context) error {
 	// Open real serial port
 	mode := &serial.Mode{
 		BaudRate: p.config.BaudRate,
+	}
+
+	if p.config.RealPort == "" {
+		p.logger.Printf("No real port configured, attempting to detect...")
+
+		ports, err := jumperless.EnumerateSerialPorts()
+		if err != nil {
+			return fmt.Errorf("failed to enumerate serial ports: %w", err)
+		}
+
+		port, version, err := jumperless.FindJumperlessPort(ctx, ports)
+		if err != nil {
+			return fmt.Errorf("failed to find Jumperless port: %w", err)
+		}
+
+		p.config.RealPort = port.Name
+		p.logger.Printf("Detected Jumperless port: %s (version: %s)", p.config.RealPort, version)
 	}
 
 	realPort, err := serial.Open(p.config.RealPort, mode)
@@ -105,11 +124,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop stops the proxy
-func (p *Proxy) Stop() error {
-	close(p.shutdown)
-
-	// Close ports
+func (p *Proxy) tryCloseVirtualPorts() {
 	if p.ptmx != nil {
 		if err := p.ptmx.Close(); err != nil {
 			p.logger.Printf("Warning: failed to close ptmx: %v", err)
@@ -120,6 +135,15 @@ func (p *Proxy) Stop() error {
 			p.logger.Printf("Warning: failed to close pts: %v", err)
 		}
 	}
+}
+
+// Stop stops the proxy
+func (p *Proxy) Stop() error {
+	close(p.shutdown)
+
+	// Close ports
+	p.tryCloseVirtualPorts()
+
 	if p.realPort != nil {
 		if err := p.realPort.Close(); err != nil {
 			p.logger.Printf("Warning: failed to close realPort: %v", err)

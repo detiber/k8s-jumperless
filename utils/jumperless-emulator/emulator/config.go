@@ -134,47 +134,30 @@ type RequestResponse struct {
 	// Whether request is a regex pattern
 	IsRegex bool `json:"isRegex" yaml:"isRegex"`
 
-	// Single response (for backward compatibility)
-	Response string `json:"response,omitempty" yaml:"response,omitempty"`
-
 	// Multiple responses with ordering/randomization
 	Responses []ResponseOption `json:"responses,omitempty" yaml:"responses,omitempty"`
 
-	// Response configuration
-	ResponseConfig ResponseConfig `json:"responseConfig" yaml:"responseConfig"`
+	// Response selection mode: "sequential", "random", "weighted"
+	SelectionMode string `json:"selectionMode,omitempty" yaml:"selectionMode,omitempty"`
 }
 
-// ResponseOption represents a single response option with optional weight
-type ResponseOption struct {
-	// Response content
-	Response string `json:"response" yaml:"response"`
+type ResponseChunk struct {
+	// Chunk data
+	Data string `json:"data" yaml:"data"`
 
-	// Weight for random selection (higher = more likely)
-	Weight int `json:"weight,omitempty" yaml:"weight,omitempty"`
-
-	// Order index for sequential responses (0-based)
-	Order int `json:"order,omitempty" yaml:"order,omitempty"`
-}
-
-// ResponseConfig defines how responses should be delivered
-type ResponseConfig struct {
 	// Delay before sending response
 	Delay time.Duration `json:"delay" yaml:"delay"`
 
 	// Random jitter to add to delay (0 to JitterMax)
 	JitterMax time.Duration `json:"jitterMax" yaml:"jitterMax"`
+}
 
-	// Whether to chunk the response
-	Chunked bool `json:"chunked" yaml:"chunked"`
+// ResponseOption represents a single response option with optional weight
+type ResponseOption struct {
+	Chunks []ResponseChunk `json:"chunks,omitempty" yaml:"chunks,omitempty"`
 
-	// Size of each chunk (if chunked)
-	ChunkSize int `json:"chunkSize" yaml:"chunkSize"`
-
-	// Delay between chunks
-	ChunkDelay time.Duration `json:"chunkDelay" yaml:"chunkDelay"`
-
-	// Response selection mode: "sequential", "random", "weighted"
-	SelectionMode string `json:"selectionMode,omitempty" yaml:"selectionMode,omitempty"`
+	// Weight for random selection (higher = more likely)
+	Weight int `json:"weight,omitempty" yaml:"weight,omitempty"`
 }
 
 // DefaultConfig returns a default configuration
@@ -228,56 +211,80 @@ func DefaultConfig() *Config {
 		},
 		Mappings: []RequestResponse{
 			{
-				Request:  "?",
-				IsRegex:  false,
-				Response: "Jumperless firmware version: 5.2.2.0\r\n",
-				ResponseConfig: ResponseConfig{
-					Delay:     10 * time.Millisecond,
-					JitterMax: 5 * time.Millisecond,
+				Request: "?",
+				IsRegex: false,
+				Responses: []ResponseOption{
+					{
+						Chunks: []ResponseChunk{
+							{
+								Data:      "Jumperless firmware version: 5.2.2.	0\r\n",
+								Delay:     10 * time.Millisecond,
+								JitterMax: 5 * time.Millisecond,
+							},
+						},
+					},
 				},
 			},
 			{
 				Request: "~",
 				IsRegex: false,
-				Response: "\r\n\r\ncopy / edit / paste any of these lines\r\n" +
-					"into the main menu to change a setting\r\n\r\n" +
-					"Jumperless Config:\r\n\r\n\r\n" +
-					"`[config] firmware_version = 5.2.2.0;\r\n\r\n" +
-					"`[hardware] generation = 5;\r\n" +
-					"`[hardware] revision = 5;\r\n" +
-					"`[hardware] probe_revision = 5;\r\n\r\n" +
-					"`[dacs] dac0_voltage = {{dac_voltage:0}};\r\n" +
-					"`[dacs] dac1_voltage = {{dac_voltage:1}};\r\n" +
-					"`[dacs] top_rail_voltage = {{dac_voltage:2}};\r\n" +
-					"`[dacs] bottom_rail_voltage = {{dac_voltage:3}};\r\n\r\n",
-				ResponseConfig: ResponseConfig{
-					Delay:     15 * time.Millisecond,
-					JitterMax: 5 * time.Millisecond,
+				Responses: []ResponseOption{
+					{
+						Chunks: []ResponseChunk{
+							{
+								Data: "\r\n\r\ncopy / edit / paste any of these lines\r\n" +
+									"into the main menu to change a setting\r\n\r\n" +
+									"Jumperless Config:\r\n\r\n\r\n" +
+									"`[config] firmware_version = 5.2.2.0;\r\n\r\n" +
+									"`[hardware] generation = 5;\r\n" +
+									"`[hardware] revision = 5;\r\n" +
+									"`[hardware] probe_revision = 5;\r\n\r\n" +
+									"`[dacs] dac0_voltage = {{dac_voltage:0}};\r\n" +
+									"`[dacs] dac1_voltage = {{dac_voltage:1}};\r\n" +
+									"`[dacs] top_rail_voltage = {{dac_voltage:2}};\r\n" +
+									"`[dacs] bottom_rail_voltage = {{dac_voltage:3}};\r\n\r\n",
+								Delay:     15 * time.Millisecond,
+								JitterMax: 5 * time.Millisecond,
+							},
+						},
+					},
 				},
 			},
 			{
-				Request:  `>dac_get\((\d+)\)`,
-				IsRegex:  true,
-				Response: "Python> >dac_get($1)\r\n{{dac_voltage:$1}}\r\n",
-				ResponseConfig: ResponseConfig{
-					Delay:     5 * time.Millisecond,
-					JitterMax: 2 * time.Millisecond,
+				Request: `>dac_get\((\d+)\)`,
+				IsRegex: true,
+				Responses: []ResponseOption{
+					{
+						Chunks: []ResponseChunk{
+							{
+								Data:      "Python> >dac_get($1)\r\n{{dac_voltage:$1}}\r\n",
+								Delay:     5 * time.Millisecond,
+								JitterMax: 2 * time.Millisecond,
+							},
+						},
+					},
 				},
 			},
 			{
 				Request: ">print_nets()",
 				IsRegex: false,
-				Response: "Python> >print_nets()\r\n" +
-					"Index\tName\t\tVoltage\t\tConstant\r\n" +
-					"1\tGND\t\t 0 V         GND\r\n" +
-					"2\tTop Rail\t 0.00 V      TOP_R\r\n" +
-					"3\tBottom Rail\t 0.00 V      BOT_R\r\n" +
-					"4\tDAC 0\t\t {{dac_value:0}} V      DAC_0\r\n" +
-					"5\tDAC 1\t\t {{dac_value:1}} V      DAC_1\r\n" +
-					"\r\n",
-				ResponseConfig: ResponseConfig{
-					Delay:     20 * time.Millisecond,
-					JitterMax: 10 * time.Millisecond,
+				Responses: []ResponseOption{
+					{
+						Chunks: []ResponseChunk{
+							{
+								Data: "Python> >print_nets()\r\n" +
+									"Index\tName\t\tVoltage\t\tConstant\r\n" +
+									"1\tGND\t\t 0 V         GND\r\n" +
+									"2\tTop Rail\t 0.00 V      TOP_R\r\n" +
+									"3\tBottom Rail\t 0.00 V      BOT_R\r\n" +
+									"4\tDAC 0\t\t {{dac_value:0}} V      DAC_0\r\n" +
+									"5\tDAC 1\t\t {{dac_value:1}} V      DAC_1\r\n" +
+									"\r\n",
+								Delay:     20 * time.Millisecond,
+								JitterMax: 10 * time.Millisecond,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -311,24 +318,19 @@ func createDefaultNodes() map[string]Node {
 }
 
 // GetResponse returns a response string based on the configuration
-func (rr *RequestResponse) GetResponse(requestCounter int) string {
-	// If single response is defined, use it
-	if rr.Response != "" {
-		return rr.Response
-	}
-
+func (rr *RequestResponse) GetResponse(requestCounter int) *ResponseOption {
 	// If no responses defined, return empty
 	if len(rr.Responses) == 0 {
-		return ""
+		return nil
 	}
 
 	// Single response option
 	if len(rr.Responses) == 1 {
-		return rr.Responses[0].Response
+		return &rr.Responses[0]
 	}
 
 	// Multiple responses - use selection mode
-	switch rr.ResponseConfig.SelectionMode {
+	switch rr.SelectionMode {
 	case "sequential":
 		return rr.getSequentialResponse(requestCounter)
 	case "random":
@@ -342,27 +344,27 @@ func (rr *RequestResponse) GetResponse(requestCounter int) string {
 }
 
 // getSequentialResponse returns responses in order
-func (rr *RequestResponse) getSequentialResponse(counter int) string {
+func (rr *RequestResponse) getSequentialResponse(counter int) *ResponseOption {
 	if len(rr.Responses) == 0 {
-		return ""
+		return nil
 	}
 	index := counter % len(rr.Responses)
-	return rr.Responses[index].Response
+	return &rr.Responses[index]
 }
 
 // getRandomResponse returns a random response
-func (rr *RequestResponse) getRandomResponse() string {
+func (rr *RequestResponse) getRandomResponse() *ResponseOption {
 	if len(rr.Responses) == 0 {
-		return ""
+		return nil
 	}
 	index := rand.Intn(len(rr.Responses)) //nolint:gosec
-	return rr.Responses[index].Response
+	return &rr.Responses[index]
 }
 
 // getWeightedResponse returns a weighted random response
-func (rr *RequestResponse) getWeightedResponse() string {
+func (rr *RequestResponse) getWeightedResponse() *ResponseOption {
 	if len(rr.Responses) == 0 {
-		return ""
+		return nil
 	}
 
 	// Calculate total weight
@@ -383,17 +385,17 @@ func (rr *RequestResponse) getWeightedResponse() string {
 	target := rand.Intn(totalWeight) //nolint:gosec
 	current := 0
 
-	for _, resp := range rr.Responses {
-		weight := resp.Weight
+	for i := range rr.Responses {
+		weight := rr.Responses[i].Weight
 		if weight <= 0 {
 			weight = 1
 		}
 		current += weight
 		if current > target {
-			return resp.Response
+			return &rr.Responses[i]
 		}
 	}
 
 	// Fallback to last response
-	return rr.Responses[len(rr.Responses)-1].Response
+	return &rr.Responses[len(rr.Responses)-1]
 }

@@ -209,70 +209,35 @@ func (e *Emulator) sendResponse(mapping *RequestResponse, originalRequest string
 	requestKey := mapping.Request
 	e.requestCounters[requestKey]++
 
-	// Calculate delay with jitter
-	delay := mapping.ResponseConfig.Delay
-	if mapping.ResponseConfig.JitterMax > 0 {
-		jitter := time.Duration(rand.Int63n(int64(mapping.ResponseConfig.JitterMax))) //nolint:gosec
-		delay += jitter
-	}
+	response := mapping.GetResponse(e.requestCounters[requestKey])
 
-	// Wait for the delay
-	if delay > 0 {
-		time.Sleep(delay)
-	}
+	for _, chunk := range response.Chunks {
+		delay := chunk.Delay
 
-	// Get the appropriate response (handling multiple responses)
-	responseText := mapping.GetResponse(e.requestCounters[requestKey])
-
-	// Handle regex substitutions
-	if mapping.IsRegex {
-		if regex, err := regexp.Compile(mapping.Request); err == nil {
-			responseText = regex.ReplaceAllString(originalRequest, responseText)
-		}
-	}
-
-	// Process hardware state updates and placeholders
-	responseText = e.processResponse(responseText, originalRequest)
-
-	e.logger.Printf("Sending response: %q", responseText)
-
-	// Send response (chunked or all at once)
-	if mapping.ResponseConfig.Chunked && mapping.ResponseConfig.ChunkSize > 0 {
-		e.sendChunkedResponse(responseText, mapping.ResponseConfig)
-	} else {
-		e.sendFullResponse(responseText)
-	}
-}
-
-// sendFullResponse sends the complete response at once
-func (e *Emulator) sendFullResponse(response string) {
-	if _, err := e.ptmx.Write([]byte(response)); err != nil {
-		e.logger.Printf("Error writing response: %v", err)
-	}
-}
-
-// sendChunkedResponse sends the response in chunks with delays
-func (e *Emulator) sendChunkedResponse(response string, config ResponseConfig) {
-	data := []byte(response)
-	chunkSize := config.ChunkSize
-
-	for i := 0; i < len(data); i += chunkSize {
-		end := i + chunkSize
-		if end > len(data) {
-			end = len(data)
+		if chunk.JitterMax > 0 {
+			jitter := time.Duration(rand.Int63n(int64(chunk.JitterMax))) //nolint:gosec
+			delay += jitter
 		}
 
-		chunk := data[i:end]
-		if _, err := e.ptmx.Write(chunk); err != nil {
-			e.logger.Printf("Error writing chunk: %v", err)
-			return
+		if delay > 0 {
+			time.Sleep(delay)
 		}
 
-		// Delay between chunks (except after the last chunk)
-		if end < len(data) && config.ChunkDelay > 0 {
-			time.Sleep(config.ChunkDelay)
+		responseText := chunk.Data
+
+		// Handle regex substitutions
+		if mapping.IsRegex {
+			if regex, err := regexp.Compile(mapping.Request); err == nil {
+				responseText = regex.ReplaceAllString(originalRequest, responseText)
+			}
 		}
+
+		// Process hardware state updates and placeholders
+		responseText = e.processResponse(responseText, originalRequest)
+
+		e.logger.Printf("Sent response chunk: %q", responseText)
 	}
+
 }
 
 // processResponse processes the response text, handling hardware state updates and placeholders

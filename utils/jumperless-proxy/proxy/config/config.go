@@ -42,9 +42,6 @@ type RecordingConfig struct {
 	// File for recorded data
 	File string `json:"file" mapstructure:"file" yaml:"file"`
 
-	// Format for output file (yaml, json, log)
-	Format string `json:"format" mapstructure:"format" yaml:"format"`
-
 	// Emulator config file to append to
 	EmulatorConfig string `json:"emulatorConfig" mapstructure:"emulator-config" yaml:"emulatorConfig"`
 
@@ -65,7 +62,6 @@ func DefaultConfig() *ProxyConfig {
 		Recording: RecordingConfig{
 			EmulatorConfig:    "",
 			File:              "",
-			Format:            "",
 			IncludeTimestamps: true,
 			BufferSize:        0, // Unbuffered for real-time recording
 		},

@@ -36,14 +36,16 @@ import (
 )
 
 const (
-	defaultConfigFile = "jumperless-proxy.yml"
-	cfgConfig         = "config"
-	cfgGenerateConfig = "generate-config"
-	cfgVerbose        = "verbose"
-	cfgRealPort       = "real-port"
-	cfgVirtualPort    = "virtual-port"
-	cfgBaudRate       = "baud-rate"
-	cfgShowConfig     = "show-config"
+	defaultConfigFile          = "jumperless-proxy.yml"
+	cfgConfig                  = "config"
+	cfgGenerateConfig          = "generate-config"
+	cfgVerbose                 = "verbose"
+	cfgRealPort                = "real-port"
+	cfgVirtualPort             = "virtual-port"
+	cfgBaudRate                = "baud-rate"
+	cfgShowConfig              = "show-config"
+	cfgRecordingFile           = "recording.file"
+	cfgRecordingEmulatorConfig = "recording.emulator-config"
 )
 
 func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue bool, description string) {
@@ -71,7 +73,7 @@ func configFlags(cmd *cobra.Command, v *viper.Viper) {
 
 	// Serial port flags
 	configStringVar(
-		cmd.PersistentFlags(),
+		cmd.Flags(),
 		v,
 		cfgRealPort,
 		"",
@@ -79,7 +81,7 @@ func configFlags(cmd *cobra.Command, v *viper.Viper) {
 	)
 
 	configStringVar(
-		cmd.PersistentFlags(),
+		cmd.Flags(),
 		v,
 		cfgVirtualPort,
 		"",
@@ -87,11 +89,27 @@ func configFlags(cmd *cobra.Command, v *viper.Viper) {
 	)
 
 	configIntVar(
-		cmd.PersistentFlags(),
+		cmd.Flags(),
 		v,
 		cfgBaudRate,
 		config.DefaultBaudRate,
 		"baud rate (e.g. 9600)",
+	)
+
+	configStringVar(
+		cmd.Flags(),
+		v,
+		cfgRecordingFile,
+		"",
+		"file to save recorded data (e.g. /tmp/jumperless-proxy-recording.yaml)",
+	)
+
+	configStringVar(
+		cmd.Flags(),
+		v,
+		cfgRecordingEmulatorConfig,
+		"",
+		"emulator config file to append to (optional)",
 	)
 
 	// Utility flags
@@ -186,7 +204,7 @@ to capture communication patterns for emulator configuration generation.`,
 
 				return nil
 			default:
-				return runProxy(v, cmd)
+				return runProxy(v)
 			}
 		},
 	}
@@ -199,7 +217,7 @@ to capture communication patterns for emulator configuration generation.`,
 	}
 }
 
-func runProxy(v *viper.Viper, cmd *cobra.Command) error {
+func runProxy(v *viper.Viper) error {
 	// Setup logger
 	logger := log.New(os.Stdout, "[jumperless-proxy] ", log.LstdFlags)
 	if !v.GetBool("verbose") {
@@ -228,17 +246,6 @@ func runProxy(v *viper.Viper, cmd *cobra.Command) error {
 	go func() {
 		sig := <-sigChan
 		logger.Printf("Received signal %s, shutting down...", sig)
-
-		// Generate emulator config if requested
-		genEmulatorConfig, _ := cmd.Flags().GetString("generate-emulator-config")
-		if genEmulatorConfig != "" {
-			logger.Printf("Generating emulator config: %s", genEmulatorConfig)
-			if err := p.SaveEmulatorConfig(genEmulatorConfig); err != nil {
-				logger.Printf("Error generating emulator config: %v", err)
-			} else {
-				logger.Printf("Emulator config generated: %s", genEmulatorConfig)
-			}
-		}
 
 		cancel()
 	}()
