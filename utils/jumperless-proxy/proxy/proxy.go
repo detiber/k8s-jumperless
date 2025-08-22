@@ -33,13 +33,13 @@ import (
 
 // Proxy represents a serial port proxy that records communication
 type Proxy struct {
-	config    *config.ProxyConfig
-	ptmx      *os.File // Master side of pty (virtual port)
-	pts       *os.File // Slave side of pty (virtual port)
-	realPort  serial.Port
-	logger    *log.Logger
-	recording *Recording
-	shutdown  chan struct{}
+	config   *config.ProxyConfig
+	ptmx     *os.File // Master side of pty (virtual port)
+	pts      *os.File // Slave side of pty (virtual port)
+	realPort serial.Port
+	logger   *log.Logger
+	recorder *Recorder
+	shutdown chan struct{}
 }
 
 // New creates a new proxy instance
@@ -52,10 +52,7 @@ func New(c *config.ProxyConfig, logger *log.Logger) (*Proxy, error) {
 		config:   c,
 		logger:   logger,
 		shutdown: make(chan struct{}),
-		recording: &Recording{
-			StartTime: time.Now(),
-			Entries:   make([]RecordEntry, 0),
-		},
+		recorder: NewRecorder(logger, c.Recording.File, c.Recording.EmulatorConfig),
 	}, nil
 }
 
@@ -79,7 +76,7 @@ func (p *Proxy) Start(ctx context.Context) error {
 
 		// Create symlink
 		if err := os.Symlink(pts.Name(), p.config.VirtualPort); err != nil {
-			p.tryCloseVirtualPorts() // Clean up if symlink creation fails
+			p.tryCleanup() // Clean up if symlink creation fails
 			return fmt.Errorf("failed to create symlink %s -> %s: %w", p.config.VirtualPort, pts.Name(), err)
 		}
 		p.logger.Printf("Created virtual serial port: %s -> %s", p.config.VirtualPort, pts.Name())
@@ -109,9 +106,21 @@ func (p *Proxy) Start(ctx context.Context) error {
 		p.logger.Printf("Detected Jumperless port: %s (version: %s)", p.config.RealPort, version)
 	}
 
+	// Start recorder
+	p.recorder.Start(ctx)
+
 	realPort, err := serial.Open(p.config.RealPort, mode)
 	if err != nil {
 		return fmt.Errorf("failed to open real serial port %s: %w", p.config.RealPort, err)
+	}
+
+	if err := realPort.ResetInputBuffer(); err != nil {
+		p.tryCleanup()
+		return fmt.Errorf("failed to reset input buffer on real port %s: %w", p.config.RealPort, err)
+	}
+	if err := realPort.ResetOutputBuffer(); err != nil {
+		p.tryCleanup()
+		return fmt.Errorf("failed to reset output buffer on real port %s: %w", p.config.RealPort, err)
 	}
 
 	p.realPort = realPort
@@ -124,25 +133,18 @@ func (p *Proxy) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p *Proxy) tryCloseVirtualPorts() {
+func (p *Proxy) tryCleanup() {
 	if p.ptmx != nil {
 		if err := p.ptmx.Close(); err != nil {
 			p.logger.Printf("Warning: failed to close ptmx: %v", err)
 		}
 	}
+
 	if p.pts != nil {
 		if err := p.pts.Close(); err != nil {
 			p.logger.Printf("Warning: failed to close pts: %v", err)
 		}
 	}
-}
-
-// Stop stops the proxy
-func (p *Proxy) Stop() error {
-	close(p.shutdown)
-
-	// Close ports
-	p.tryCloseVirtualPorts()
 
 	if p.realPort != nil {
 		if err := p.realPort.Close(); err != nil {
@@ -157,15 +159,16 @@ func (p *Proxy) Stop() error {
 		}
 	}
 
-	// Save recording
-	if len(p.recording.Entries) > 0 {
-		p.recording.EndTime = time.Now()
-		if err := p.saveRecording(); err != nil {
-			p.logger.Printf("Error saving recording: %v", err)
-		} else {
-			p.logger.Printf("Recording saved to: %s", p.config.Recording.File)
-		}
+	if p.recorder != nil {
+		p.recorder.Stop()
 	}
+}
+
+// Stop stops the proxy
+func (p *Proxy) Stop() error {
+	close(p.shutdown)
+
+	p.tryCleanup()
 
 	return nil
 }
@@ -215,7 +218,7 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				data := buffer[:n]
 
 				// Record request
-				p.recordEntry("request", string(data), 0)
+				p.recordEntry(ctx, "request", string(data), 0)
 
 				// Forward to real port
 				if _, err := p.realPort.Write(data); err != nil {
@@ -223,6 +226,10 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				}
 
 				p.logger.Printf("Request: %q", string(data))
+
+				if err := p.realPort.Drain(); err != nil {
+					p.logger.Printf("Error draining real port: %v", err)
+				}
 			}
 		}
 	}
@@ -261,7 +268,7 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 				data := buffer[:n]
 
 				// Record response
-				p.recordEntry("response", string(data), duration)
+				p.recordEntry(ctx, "response", string(data), duration)
 
 				// Forward to virtual port
 				if _, err := p.ptmx.Write(data); err != nil {
@@ -275,13 +282,11 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 }
 
 // recordEntry records a communication entry
-func (p *Proxy) recordEntry(direction, data string, duration time.Duration) {
-	entry := RecordEntry{
+func (p *Proxy) recordEntry(ctx context.Context, direction, data string, duration time.Duration) {
+	p.recorder.Record(ctx, RecordEntry{
 		Timestamp: time.Now(),
 		Direction: direction,
 		Data:      data,
 		Duration:  duration,
-	}
-
-	p.recording.Entries = append(p.recording.Entries, entry)
+	})
 }

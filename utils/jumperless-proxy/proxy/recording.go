@@ -17,8 +17,10 @@ limitations under the License.
 package proxy
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,15 +51,107 @@ type Recording struct {
 	Entries   []RecordEntry `json:"entries"   yaml:"entries"`
 }
 
+// Recorder handles recording of serial port interactions
+type Recorder struct {
+	recChan            chan RecordEntry
+	startTime          time.Time
+	endTime            time.Time
+	entries            []RecordEntry
+	stop               chan struct{}
+	logger             *log.Logger
+	filename           string
+	emulatorConfigFile string
+}
+
+// NewRecorder creates a new Recorder instance
+func NewRecorder(logger *log.Logger, filename string, emulatorConfigFile string) *Recorder {
+	return &Recorder{
+		recChan:            make(chan RecordEntry),
+		entries:            []RecordEntry{},
+		stop:               make(chan struct{}),
+		logger:             logger,
+		filename:           filename,
+		emulatorConfigFile: emulatorConfigFile,
+	}
+}
+
+func (r *Recorder) startListener(ctx context.Context) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case entry := <-r.recChan:
+				r.entries = append(r.entries, entry)
+			}
+		}
+	}()
+}
+
+func (r *Recorder) shutdown() {
+	r.endTime = time.Now()
+
+	if err := r.saveRecording(); err != nil {
+		r.logger.Printf("Error saving recording: %v", err)
+	} else {
+		r.logger.Printf("Recording saved to: %s", r.filename)
+		if r.emulatorConfigFile != "" {
+			r.logger.Printf("Emulator config saved to: %s", r.emulatorConfigFile)
+		}
+	}
+}
+
+// Start begins the recording process
+func (r *Recorder) Start(ctx context.Context) {
+	r.startTime = time.Now()
+
+	listenContext, cancelListener := context.WithCancel(ctx)
+	r.startListener(listenContext)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				// context cancelled, shutdown
+				// listener context is a child of ctx, so it will be cancelled too
+				r.shutdown()
+				return
+			case <-r.stop:
+				// start with shutting down the listener
+				cancelListener()
+				// then shutdown the recorder
+				r.shutdown()
+			}
+		}
+	}()
+}
+
+// Record records a new entry
+func (r *Recorder) Record(ctx context.Context, entry RecordEntry) {
+	select {
+	case <-ctx.Done():
+		return
+	case r.recChan <- entry:
+		return
+	}
+}
+
+// Stop stops the recording process
+func (r *Recorder) Stop() {
+	close(r.stop)
+}
+
 // saveRecording saves the recorded data to a file
-func (p *Proxy) saveRecording() error {
-	if p.config.Recording.File == "" {
-		p.logger.Println("No recording file configured, using default: jumperless-recording.yaml")
-		p.config.Recording.File = "jumperless-recording.yaml"
+func (r *Recorder) saveRecording() error {
+	r.logger.Println("Saving recording...")
+
+	if r.filename == "" {
+		r.logger.Println("No recording file configured, using default: jumperless-recording.yaml")
+		r.filename = "jumperless-recording.yaml"
 	}
 
 	// Create directory if it doesn't exist
-	dir := filepath.Dir(p.config.Recording.File)
+	dir := filepath.Dir(r.filename)
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
@@ -65,35 +159,50 @@ func (p *Proxy) saveRecording() error {
 	var data []byte
 	var err error
 
-	data, err = yaml.Marshal(p.recording)
+	recording := Recording{
+		StartTime: r.startTime,
+		EndTime:   r.endTime,
+		Entries:   r.entries,
+	}
+
+	data, err = yaml.Marshal(recording)
 	if err != nil {
 		return fmt.Errorf("failed to marshal recording to YAML: %w", err)
 	}
 
-	if err := os.WriteFile(p.config.Recording.File, data, 0600); err != nil {
-		return fmt.Errorf("failed to write recording file %s: %w", p.config.Recording.File, err)
+	if err := os.WriteFile(r.filename, data, 0600); err != nil {
+		return fmt.Errorf("failed to write recording file %s: %w", r.filename, err)
 	}
 
-	if p.config.Recording.EmulatorConfig != "" {
+	r.logger.Printf("Recording saved to %s", r.filename)
+
+	if r.emulatorConfigFile != "" {
+		r.logger.Printf("Saving emulator config to %s", r.emulatorConfigFile)
+
 		// Append to emulator config if specified
-		emulatorConfig, err := p.ConvertToEmulatorConfig()
+		emulatorConfig, err := recording.ConvertToEmulatorConfig()
 		if err != nil {
+			r.logger.Printf("Error converting to emulator config: %v", err)
 			return fmt.Errorf("failed to convert recording to emulator config: %w", err)
 		}
 		emulatorData, err := yaml.Marshal(emulatorConfig)
 		if err != nil {
+			r.logger.Printf("Error marshaling emulator config: %v", err)
 			return fmt.Errorf("failed to marshal emulator config: %w", err)
 		}
-		if err := os.WriteFile(p.config.Recording.EmulatorConfig, emulatorData, 0600); err != nil {
-			return fmt.Errorf("failed to write emulator config file %s: %w", p.config.Recording.EmulatorConfig, err)
+		if err := os.WriteFile(r.emulatorConfigFile, emulatorData, 0600); err != nil {
+			r.logger.Printf("Error writing emulator config file: %v", err)
+			return fmt.Errorf("failed to write emulator config file %s: %w", r.emulatorConfigFile, err)
 		}
+
+		r.logger.Printf("Emulator config saved to %s", r.emulatorConfigFile)
 	}
 
 	return nil
 }
 
 // ConvertToEmulatorConfig converts a recording to an emulator configuration
-func (p *Proxy) ConvertToEmulatorConfig() (*emulator.Config, error) {
+func (r *Recording) ConvertToEmulatorConfig() (*emulator.Config, error) {
 	c := emulator.DefaultConfig()
 	c.Mappings = []emulator.RequestResponse{}
 
@@ -112,7 +221,7 @@ func (p *Proxy) ConvertToEmulatorConfig() (*emulator.Config, error) {
 		}
 	}()
 
-	for _, entry := range p.recording.Entries {
+	for _, entry := range r.Entries {
 		switch entry.Direction {
 		case "request":
 			// Clean up the request (trim whitespace, normalize)
@@ -181,8 +290,8 @@ func (p *Proxy) ConvertToEmulatorConfig() (*emulator.Config, error) {
 }
 
 // SaveEmulatorConfig saves the recording as an emulator configuration
-func (p *Proxy) SaveEmulatorConfig(filename string) error {
-	c, err := p.ConvertToEmulatorConfig()
+func (r *Recording) SaveEmulatorConfig(filename string) error {
+	c, err := r.ConvertToEmulatorConfig()
 	if err != nil {
 		return fmt.Errorf("failed to convert recording to emulator config: %w", err)
 	}

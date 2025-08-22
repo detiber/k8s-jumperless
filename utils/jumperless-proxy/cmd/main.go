@@ -53,7 +53,7 @@ func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultVa
 	_ = v.BindPFlag(key, flagSet.Lookup(key))
 }
 
-func configStringVar(flagSet *pflag.FlagSet, v *viper.Viper, key, defaultValue, description string) {
+func configStringVar(flagSet *pflag.FlagSet, v *viper.Viper, key, defaultValue, description string) { //nolint:unparam
 	flagSet.String(key, defaultValue, description)
 	_ = v.BindPFlag(key, flagSet.Lookup(key))
 }
