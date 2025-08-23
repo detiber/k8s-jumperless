@@ -1,8 +1,6 @@
 module github.com/detiber/k8s-jumperless/utils/test
 
-go 1.24.0
-
-toolchain go1.24.6
+go 1.25.0
 
 require (
 	github.com/detiber/k8s-jumperless v0.0.0

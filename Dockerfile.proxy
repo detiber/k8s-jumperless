@@ -1,5 +1,5 @@
 # Build the proxy binary
-FROM golang:1.24 AS builder-proxy
+FROM golang:1.25 AS builder-proxy
 ARG TARGETOS
 ARG TARGETARCH
 

@@ -201,7 +201,7 @@ to capture communication patterns for emulator configuration generation.`,
 
 func runProxy(v *viper.Viper) error {
 	// Setup logger
-	logger := log.New(os.Stdout, "[jumperless-proxy] ", log.LstdFlags)
+	logger := log.New(os.Stdout, "[proxy] ", log.LstdFlags)
 	if !v.GetBool("verbose") {
 		logger.SetOutput(os.Stderr)
 	}
@@ -221,7 +221,7 @@ func runProxy(v *viper.Viper) error {
 	}
 
 	// Setup signal handling
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancelCause(context.Background())
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -229,7 +229,7 @@ func runProxy(v *viper.Viper) error {
 		sig := <-sigChan
 		logger.Printf("Received signal %s, shutting down...", sig)
 
-		cancel()
+		cancel(nil)
 	}()
 
 	// Start proxy
@@ -237,7 +237,7 @@ func runProxy(v *viper.Viper) error {
 		return fmt.Errorf("failed to start proxy: %w", err)
 	}
 
-	// logger.Printf("Proxy started. Virtual port: %s", p.GetVirtualPortName())
+	logger.Printf("Proxy started. Virtual port: %s", p.GetVirtualPortName())
 	logger.Printf("Connect your application to the virtual port and interact with the device")
 	logger.Printf("Press Ctrl+C to stop and save recording")
 

@@ -27,7 +27,7 @@ Run these commands in order to set up the development environment:
    - Downloads and sets up the latest release of envtest binaries for latest release of Kubernetes
    - Runs unit tests for manager, emulator, proxy, and integration test modules
 4. **Run linter**: `make lint-all` -- takes 8 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
-   - Downloads golangci-lint v2.1.6
+   - Downloads golangci-lint v2.4.0
    - Runs extensive linting with 60+ enabled linters across all modules
 
 ### Development Workflow
@@ -106,7 +106,7 @@ E2E tests require Kind cluster setup but may fail in some environments:
 - **CRD manifests**: `config/crd/bases/`
 - **Sample resources**: `config/samples/`
 - **Build configuration**: `Makefile`
-- **Go module**: `go.mod` (Go 1.24+ required)
+- **Go module**: `go.mod` (Go 1.25+ required)
 - **Emulator utility**: `utils/jumperless-emulator/` (independent Go module)
 - **Proxy utility**: `utils/jumperless-proxy/` (independent Go module)
 - **Integration tests**: `utils/test/` (independent Go module)
@@ -187,7 +187,7 @@ Comprehensive test suite supporting both emulated and real hardware:
 This development workflow mirrors the CI process. CI enforces build, test, and lint validation for all contributions across all modules (manager, emulator, proxy, and integration tests).
 
 ### Common Error Scenarios
-- **Build fails**: Run `go mod tidy` or `make tidy-all` first, ensure Go 1.24+ installed (check `go.mod` for current version requirements)
+- **Build fails**: Run `go mod tidy` or `make tidy-all` first, ensure Go 1.25+ installed (check `go.mod` for current version requirements)
 - **Tests fail**: Check envtest setup, may need different Kubernetes version
 - **Lint fails**: Review `.golangci.yml` for enabled linters, use `make lint-fix-all` for auto-fixes across all modules
 - **Manager won't start**: Ensure valid kubeconfig and cluster connectivity, try creating a kind cluster

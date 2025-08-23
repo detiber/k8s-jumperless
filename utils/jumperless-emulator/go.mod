@@ -1,6 +1,6 @@
 module github.com/detiber/k8s-jumperless/utils/jumperless-emulator
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/creack/pty v1.1.24
