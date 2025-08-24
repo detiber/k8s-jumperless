@@ -4,7 +4,7 @@ A Kubernetes operator built with Kubebuilder v4.7.1 that declaratively manages [
 The project includes comprehensive testing utilities:
 - **k8s-jumperless manager**: The main Kubernetes controller
 - **jumperless-emulator**: Hardware emulator for testing without physical devices
-- **jumperless-proxy**: Recording proxy for capturing real device interactions
+- **proxy**: Recording proxy for capturing real device interactions
 - **integration tests**: Full test suite supporting both emulated and real hardware
 
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
@@ -22,7 +22,7 @@ Run these commands in order to set up the development environment:
    - Formats and vets Go code
    - Builds manager binary to `bin/manager`
    - Builds emulator binary to `bin/jumperless-emulator`
-   - Builds proxy binary to `bin/jumperless-proxy`
+   - Builds proxy binary to `bin/proxy`
 3. **Run tests**: `make test-all` -- takes 2 minutes. NEVER CANCEL. Set timeout to 4+ minutes.
    - Downloads and sets up the latest release of envtest binaries for latest release of Kubernetes
    - Runs unit tests for manager, emulator, proxy, and integration test modules
@@ -87,7 +87,7 @@ After making changes to the operator:
 5. **Test utilities**:
    - Run `make test-emulator test-proxy test-test` to test all utilities
    - Test emulator: `./bin/jumperless-emulator --help` should show cobra-based CLI
-   - Test proxy: `./bin/jumperless-proxy --help` should show recording options
+   - Test proxy: `./bin/proxy --help` should show recording options
    - Integration tests: Check `utils/test/integration/` for hardware compatibility tests
 
 ### End-to-End Testing (Optional)
@@ -108,7 +108,7 @@ E2E tests require Kind cluster setup but may fail in some environments:
 - **Build configuration**: `Makefile`
 - **Go module**: `go.mod` (Go 1.25+ required)
 - **Emulator utility**: `utils/jumperless-emulator/` (independent Go module)
-- **Proxy utility**: `utils/jumperless-proxy/` (independent Go module)
+- **Proxy utility**: `utils/proxy/` (independent Go module)
 - **Integration tests**: `utils/test/` (independent Go module)
 
 ### Repository Structure Quick Reference
@@ -124,7 +124,7 @@ E2E tests require Kind cluster setup but may fail in some environments:
 ├── internal/controller/    # Controller implementation
 ├── utils/                  # Testing and development utilities
 │   ├── jumperless-emulator/ # Hardware emulator (independent Go module)
-│   ├── jumperless-proxy/   # Recording proxy (independent Go module)
+│   ├── proxy/   # Recording proxy (independent Go module)
 │   └── test/              # Integration tests (independent Go module)
 ├── test/                  # E2E and utility test code
 ├── Makefile               # Build automation
@@ -154,7 +154,7 @@ make build-emulator
 ./bin/jumperless-emulator --config config.yaml --port /tmp/jumperless --verbose
 ```
 
-#### Jumperless Proxy (`utils/jumperless-proxy`)
+#### Jumperless Proxy (`utils/proxy`)
 Recording proxy for capturing real device interactions:
 - **Transparent proxying**: Full serial configuration support
 - **Recording**: YAML, JSON, or log formats with timing capture
@@ -163,7 +163,7 @@ Recording proxy for capturing real device interactions:
 ```bash
 # Build and run proxy
 make build-proxy
-./bin/jumperless-proxy --real-port /dev/ttyUSB0 --virtual-port /tmp/proxy --recording-file session.yaml
+./bin/proxy --real-port /dev/ttyUSB0 --virtual-port /tmp/proxy --recording-file session.yaml
 ```
 
 #### Integration Tests (`utils/test`)

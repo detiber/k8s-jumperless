@@ -5,7 +5,7 @@
 This project provides a comprehensive testing ecosystem for the k8s-jumperless operator through two sophisticated utilities with extensive hardware emulation capabilities. Both utilities are organized as independent Go subpackages under `/utils/`:
 
 - **`/utils/jumperless-emulator/`** - Comprehensive hardware emulator with realistic device simulation
-- **`/utils/jumperless-proxy/`** - Recording proxy for capturing real device interactions
+- **`/utils/proxy/`** - Recording proxy for capturing real device interactions
 - **`/utils/test/`** - Integration test suite as independent Go module
 
 Each subpackage has its own `go.mod` file and can be built independently while maintaining cross-compatibility with the main operator.
@@ -40,7 +40,7 @@ jumperless-emulator --config emulator.yaml \
   --verbose
 ```
 
-### Jumperless Proxy (`utils/jumperless-proxy`)
+### Jumperless Proxy (`utils/proxy`)
 
 A transparent recording proxy that captures communication patterns between applications and real hardware:
 
@@ -52,9 +52,9 @@ A transparent recording proxy that captures communication patterns between appli
 
 #### Enhanced CLI
 ```bash
-jumperless-proxy \
+proxy \
   --real-port /dev/ttyUSB0 \
-  --virtual-port /tmp/jumperless-proxy \
+  --virtual-port /tmp/proxy \
   --recording-file session.yaml \
   --stop-bits 1 \
   --parity none
@@ -99,9 +99,9 @@ make build-proxy
 
 1. **Start the proxy with enhanced CLI:**
    ```bash
-   ./bin/jumperless-proxy \
+   ./bin/proxy \
      --real-port /dev/ttyUSB0 \
-     --virtual-port /tmp/jumperless-proxy \
+     --virtual-port /tmp/proxy \
      --recording-file recordings/session1.yaml \
      --verbose
    ```
@@ -172,7 +172,7 @@ mappings:
 
 ```yaml
 virtualPort:
-  port: /tmp/jumperless-proxy   # Virtual port for clients
+  port: /tmp/proxy   # Virtual port for clients
   baudRate: 115200
   stopBits: 1                   # Stop bits configuration
   parity: "none"                # Parity configuration
@@ -205,7 +205,7 @@ make docker-build
 
 # Or build individually from subdirectories
 cd utils/jumperless-emulator && docker build -t jumperless-emulator .
-cd utils/jumperless-proxy && docker build -t jumperless-proxy .
+cd utils/proxy && docker build -t jumperless-proxy .
 ```
 
 ### Running in Docker
@@ -219,7 +219,7 @@ docker run -v $(pwd)/examples:/config \
 # Run proxy in Docker (requires device access)
 docker run --privileged -v /dev:/dev \
   -v $(pwd)/recordings:/recordings \
-  jumperless-proxy --real-port /dev/ttyUSB0 \
+  proxy --real-port /dev/ttyUSB0 \
     --recording-file /recordings/session.yaml
 ```
 
@@ -253,7 +253,7 @@ docker run --privileged -v /dev:/dev \
 
 ```bash
 # Start proxy with real device
-./bin/jumperless-proxy \
+./bin/proxy \
   --real-port /dev/ttyUSB0 \
   --virtual-port /tmp/recording \
   --recording-file recordings/baseline.yaml \
@@ -352,7 +352,7 @@ configSections, err := local.GetConfig(ctx, emulatorPort)
 sudo usermod -a -G dialout $USER
 
 # Or run with appropriate permissions
-sudo ./bin/jumperless-proxy --real-port /dev/ttyUSB0 ...
+sudo ./bin/proxy --real-port /dev/ttyUSB0 ...
 ```
 
 ### Port Conflicts
@@ -360,7 +360,7 @@ sudo ./bin/jumperless-proxy --real-port /dev/ttyUSB0 ...
 ```bash
 # Use different port paths
 ./bin/jumperless-emulator --port /tmp/jumperless-test
-./bin/jumperless-proxy --virtual-port /tmp/proxy-test
+./bin/proxy --virtual-port /tmp/proxy-test
 ```
 
 ### Build Issues
@@ -371,7 +371,7 @@ make tidy-all
 
 # Build with verbose output
 ./bin/jumperless-emulator --verbose
-./bin/jumperless-proxy --verbose
+./bin/proxy --verbose
 ```
 
 This comprehensive testing ecosystem enables full development and testing of the k8s-jumperless operator without requiring physical hardware, supporting both development workflows and automated CI/CD pipelines with realistic hardware simulation.

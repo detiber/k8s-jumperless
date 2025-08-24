@@ -6,19 +6,19 @@ permissions:
 on:
   push:
     paths:
-      - 'utils/jumperless-proxy/**'
+      - 'utils/proxy/**'
     branches:
       - main
     tags:
       - 'v*'
   pull_request:
     paths:
-      - 'utils/jumperless-proxy/**'
+      - 'utils/proxy/**'
 
 jobs:
   lint-proxy:
     uses: ./.github/workflows/_lint.yml
     with:
-      go-version-file: "utils/jumperless-proxy/go.mod"
-      go-cache-dependency-path: "utils/jumperless-proxy/go.sum"
-      module-working-directory: "utils/jumperless-proxy"
+      go-version-file: "utils/proxy/go.mod"
+      go-cache-dependency-path: "utils/proxy/go.sum"
+      module-working-directory: "utils/proxy"

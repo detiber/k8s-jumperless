@@ -28,20 +28,23 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/detiber/k8s-jumperless/utils/jumperless"
+	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
 	"github.com/detiber/k8s-jumperless/utils/proxy/proxy/config"
 	"go.bug.st/serial"
 )
 
 // Proxy represents a serial port proxy that records communication
 type Proxy struct {
-	config     *config.ProxyConfig
-	logger     *log.Logger
-	pseudoTTY  *os.File // This is what we listen on for user input
-	virtualTTY *os.File // This is what we return to the user as the virtual port
-	realPort   serial.Port
-	cancelV2R  context.CancelCauseFunc
-	cancelR2V  context.CancelCauseFunc
-	wg         sync.WaitGroup
+	config         *config.ProxyConfig
+	logger         *log.Logger
+	recorder       *Recorder
+	pseudoTTY      *os.File // This is what we listen on for user input
+	virtualTTY     *os.File // This is what we return to the user as the virtual port
+	realPort       serial.Port
+	cancelV2R      context.CancelCauseFunc
+	cancelR2V      context.CancelCauseFunc
+	cancelRecorder context.CancelCauseFunc
+	wg             sync.WaitGroup
 }
 
 // New creates a new proxy instance
@@ -51,8 +54,9 @@ func New(c *config.ProxyConfig, logger *log.Logger) (*Proxy, error) {
 	}
 
 	return &Proxy{
-		config: c,
-		logger: logger,
+		config:   c,
+		logger:   logger,
+		recorder: NewRecorder(logger, c.EmulatorConfig),
 	}, nil
 }
 
@@ -131,6 +135,11 @@ func (p *Proxy) Start(ctx context.Context) error {
 	p.realPort = realPort
 	p.logger.Printf("Connected to real serial port: %s", p.config.RealPort)
 
+	// Start recorder
+	recorderctx, cancelRecorder := context.WithCancelCause(ctx)
+	p.cancelRecorder = cancelRecorder
+	p.recorder.Start(recorderctx)
+
 	// Start proxy goroutines
 	v2rctx, cancelV2R := context.WithCancelCause(ctx)
 	p.cancelV2R = cancelV2R
@@ -187,8 +196,13 @@ func (p *Proxy) Stop() error {
 	if p.cancelV2R != nil {
 		p.cancelV2R(nil)
 	}
+
 	if p.cancelR2V != nil {
 		p.cancelR2V(nil)
+	}
+
+	if p.cancelRecorder != nil {
+		p.cancelRecorder(nil)
 	}
 
 	p.wg.Wait()
@@ -202,8 +216,6 @@ func (p *Proxy) Stop() error {
 func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 	p.logger.Printf("Starting to proxy data from virtual port %s to real port %s", p.virtualTTY.Name(), p.config.RealPort)
 	buffer := make([]byte, p.config.BufferSize)
-
-	// Set read timeout
 
 	defer func() {
 		p.logger.Printf("Stopped proxying data from virtual port to real port")
@@ -237,7 +249,7 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				data := buffer[:n]
 
 				// // Record request
-				// p.recordEntry(ctx, "request", string(data), 0)
+				p.recorder.RecordRequest(string(data))
 
 				// Forward to real port
 				if _, err := p.realPort.Write(data); err != nil {
@@ -276,10 +288,7 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 			p.logger.Printf("Context done, stopping proxyRealToVirtual")
 			return
 		default:
-			startTime := time.Now()
 			n, err := p.realPort.Read(buffer)
-			duration := time.Since(startTime)
-
 			if err != nil {
 				if os.IsTimeout(err) {
 					continue // Timeout is expected
@@ -291,19 +300,16 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 			if n > 0 {
 				data := buffer[:n]
 
-				// Record response
-				// p.recordEntry(ctx, "response", string(data), duration)
+				p.recorder.RecordResponse(emulator.ResponseChunk{
+					Data: string(data),
+				})
 
 				// Forward to virtual port
 				if _, err := p.pseudoTTY.Write(data); err != nil {
 					p.logger.Printf("Error writing to virtual port: %v", err)
 				}
 
-				if err := p.pseudoTTY.Sync(); err != nil {
-					p.logger.Printf("Error syncing virtual port: %v", err)
-				}
-
-				p.logger.Printf("Response: %q (duration: %v)", string(data), duration)
+				p.logger.Printf("Response: %q", string(data))
 			}
 		}
 	}

@@ -53,7 +53,7 @@ tidy-emulator: ## Run go mod tidy to clean up go.mod and go.sum files.
 
 .PHONY: tidy-proxy
 tidy-proxy: ## Run go mod tidy to clean up go.mod and go.sum files.
-	cd utils/jumperless-proxy; go mod tidy
+	cd utils/proxy; go mod tidy
 
 .PHONY: tidy-test
 tidy-test: ## Run go mod tidy to clean up go.mod and go.sum files.
@@ -87,7 +87,7 @@ fmt-emulator: ## Run go fmt against emulator code.
 
 .PHONY: fmt-proxy
 fmt-proxy: ## Run go fmt against proxy code.
-	cd utils/jumperless-proxy; go fmt ./...
+	cd utils/proxy; go fmt ./...
 
 .PHONY: fmt-test
 fmt-test: ## Run go fmt against fully integrated test code.
@@ -106,7 +106,7 @@ vet-emulator: ## Run go vet against emulator code.
 
 .PHONY: vet-proxy
 vet-proxy: ## Run go vet against proxy code.
-	cd utils/jumperless-proxy; go vet ./...
+	cd utils/proxy; go vet ./...
 
 .PHONY: vet-test
 vet-test: ## Run go vet against fully integrated test code.
@@ -125,7 +125,7 @@ test-emulator: fmt-emulator vet-emulator
 
 .PHONY: test-proxy
 test-proxy: fmt-proxy vet-proxy
-	cd utils/jumperless-proxy; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+	cd utils/proxy; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
 .PHONY: test-test
 test-test: fmt-test vet-test
@@ -174,7 +174,7 @@ lint-emulator: golangci-lint ## Run golangci-lint linter
 
 .PHONY: lint-proxy
 lint-proxy: golangci-lint ## Run golangci-lint linter
-	cd utils/jumperless-proxy; $(GOLANGCI_LINT) run
+	cd utils/proxy; $(GOLANGCI_LINT) run
 
 .PHONY: lint-test
 lint-test: golangci-lint ## Run golangci-lint linter
@@ -193,7 +193,7 @@ lint-fix-emulator: golangci-lint ## Run golangci-lint linter
 
 .PHONY: lint-fix-proxy
 lint-fix-proxy: golangci-lint ## Run golangci-lint linter
-	cd utils/jumperless-proxy; $(GOLANGCI_LINT) run --fix
+	cd utils/proxy; $(GOLANGCI_LINT) run --fix
 
 .PHONY: lint-fix-test
 lint-fix-test: golangci-lint ## Run golangci-lint linter
@@ -215,7 +215,7 @@ build-emulator: fmt vet $(LOCALBIN) ## Build jumperless emulator binary.
 
 .PHONY: build-proxy
 build-proxy: fmt vet $(LOCALBIN) ## Build jumperless proxy binary.
-	go build -C utils/jumperless-proxy -o $(LOCALBIN)/jumperless-proxy ./cmd
+	go build -C utils/proxy -o $(LOCALBIN)/proxy ./cmd
 
 .PHONY: build-all
 build-all: build build-emulator build-proxy ## Build all binaries.

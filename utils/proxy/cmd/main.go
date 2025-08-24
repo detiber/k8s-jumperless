@@ -108,7 +108,7 @@ func main() {
 	v.AutomaticEnv()
 
 	rootCmd := &cobra.Command{
-		Use:   "jumperless-proxy",
+		Use:   "proxy",
 		Short: "Jumperless recording proxy",
 		Long: `A recording proxy that sits between applications and real Jumperless hardware 
 to capture communication patterns for emulator configuration generation.`,
