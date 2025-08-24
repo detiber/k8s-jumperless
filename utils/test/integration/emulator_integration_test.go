@@ -30,7 +30,7 @@ import (
 	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
 )
 
-func TestEmulatorWithLocalController(t *testing.T) {
+func TestEmulatorWithLocalController(t *testing.T) { //nolint:gocyclo
 	// Create a temporary config for testing
 	config := emulator.DefaultConfig()
 	config.Serial.Port = "/tmp/integration-test-jumperless"
@@ -144,8 +144,14 @@ func TestEmulatorWithLocalController(t *testing.T) {
 		foundBottomRail := false
 
 		for _, net := range nets {
+			var voltage string
+			if net.Voltage != nil {
+				voltage = *net.Voltage
+			} else {
+				voltage = "<nil>"
+			}
 			t.Logf("Found net: Index=%d, Name=%s, Voltage=%s, Nodes=%v",
-				net.Index, net.Name, net.Voltage, net.Nodes)
+				net.Index, net.Name, voltage, net.Nodes)
 
 			if strings.Contains(net.Name, "GND") {
 				foundGND = true
