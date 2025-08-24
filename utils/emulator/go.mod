@@ -3,6 +3,7 @@ module github.com/detiber/k8s-jumperless/utils/emulator
 go 1.25.0
 
 require (
+	github.com/creack/pty v1.1.24
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1

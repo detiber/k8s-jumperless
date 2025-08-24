@@ -16,11 +16,41 @@ limitations under the License.
 
 package config
 
-const DefaultBaudRate = 115200
+import "time"
+
+// const DefaultBaudRate = 115200
 const DefaultBufferSize = 1024
 
 // EmulatorConfig represents the emulator configuration
 type EmulatorConfig struct {
-	BaudRate   int `json:"baudRate"   mapstructure:"baud-rate"   yaml:"baudRate"`
-	BufferSize int `json:"bufferSize" mapstructure:"buffer-size" yaml:"bufferSize"`
+	BufferSize  int    `json:"bufferSize"  mapstructure:"buffer-size"  yaml:"bufferSize"`
+	VirtualPort string `json:"virtualPort" mapstructure:"virtual-port" yaml:"virtualPort"`
+
+	// Request/response mappings
+	Mappings []RequestResponse `json:"mappings" mapstructure:"mappings" yaml:"mappings"`
+}
+
+// RequestResponse defines a request pattern and its response(s)
+type RequestResponse struct {
+	// Request pattern (can be literal string or regex)
+	Request string `json:"request" mapstructure:"request" yaml:"request"`
+
+	// Multiple responses with ordering/randomization
+	Responses []ResponseOption `json:"responses" mapstructure:"responses" yaml:"responses"`
+}
+
+type ResponseChunk struct {
+	// Chunk data
+	Data string `json:"data" mapstructure:"data" yaml:"data"`
+
+	// Delay before sending response
+	Delay time.Duration `json:"delay" mapstructure:"delay" yaml:"delay"`
+
+	// Random jitter to add to delay (0 to JitterMax)
+	JitterMax time.Duration `json:"jitterMax" mapstructure:"jitter-max" yaml:"jitterMax"`
+}
+
+// ResponseOption represents a single response option with optional weight
+type ResponseOption struct {
+	Chunks []ResponseChunk `json:"chunks" mapstructure:"chunks" yaml:"chunks"`
 }

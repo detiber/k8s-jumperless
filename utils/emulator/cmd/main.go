@@ -41,6 +41,8 @@ const (
 	cfgGenerateConfig = "generate-config"
 	cfgVerbose        = "verbose"
 	cfgShowConfig     = "show-config"
+	cfgBufferSize     = "buffer-size"
+	cfgVirtualPort    = "virtual-port"
 )
 
 func configBoolVar(flagSet *pflag.FlagSet, v *viper.Viper, key string, defaultValue bool, description string) {
@@ -64,6 +66,15 @@ func configFlags(cmd *cobra.Command, v *viper.Viper) {
 
 	configBoolVar(
 		cmd.PersistentFlags(), v, cfgVerbose, false, "enable verbose logging",
+	)
+
+	configIntVar(
+		cmd.Flags(), v, cfgBufferSize, config.DefaultBufferSize, "buffer size for serial communication",
+	)
+
+	configStringVar(
+		cmd.Flags(), v, cfgVirtualPort, "",
+		"name of the virtual serial port to create (e.g., /tmp/jumperless-virtual)",
 	)
 
 	// Utility flags
