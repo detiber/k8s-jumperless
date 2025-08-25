@@ -1,0 +1,39 @@
+name: _test
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      go-version-file:
+        required: true
+        type: string
+      go-cache-dependency-path:
+        required: true
+        type: string
+      module-working-directory:
+        required: true
+        type: string
+      target-name:
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: Run on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ inputs.go-version-file }}
+          cache-dependency-path: ${{ inputs.go-cache-dependency-path }}
+          cache: true
+
+      - name: Tidy
+        working-directory: ${{ inputs.module-working-directory }}
+        run: go mod tidy
+
+      - name: Running Tests
+        run: make ${{ inputs.target-name }}

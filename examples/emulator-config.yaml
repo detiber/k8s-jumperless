@@ -1,0 +1,41 @@
+serial:
+    port: /tmp/jumperless
+    baudRate: 115200
+    bufferSize: 1024
+mappings:
+    - request: '?'
+      isRegex: false
+      response: "Jumperless firmware version: 5.2.2.0\r\n"
+      responseConfig:
+        delay: 10ms
+        jitterMax: 5ms
+        chunked: false
+        chunkSize: 0
+        chunkDelay: 0s
+    - request: "~"
+      isRegex: false
+      response: "~\r\n\r\ncopy / edit / paste any of these lines\r\ninto the main menu to change a setting\r\n\r\nJumperless Config:\r\n\r\n\r\n`[config] firmware_version = 5.2.2.0;\r\n\r\n`[hardware] generation = 5;\r\n`[hardware] revision = 5;\r\n`[hardware] probe_revision = 5;\r\n\r\n`[dacs] top_rail = 3.50;\r\n`[dacs] bottom_rail = 3.50;\r\n\r\nEND\r\n"
+      responseConfig:
+        delay: 500ms
+        jitterMax: 100ms
+        chunked: false
+        chunkSize: 0
+        chunkDelay: 0s
+    - request: '>dac_get\((\d+)\)'
+      isRegex: true
+      response: "Python> >dac_get($1)\r\n3.3V\r\n"
+      responseConfig:
+        delay: 10ms
+        jitterMax: 5ms
+        chunked: false
+        chunkSize: 0
+        chunkDelay: 0s
+    - request: '>print_nets\(\)'
+      isRegex: true
+      response: "Python> >print_nets()\r\nIndex\tName\t\tVoltage\tNode\r\n1\t GND\t\t 0 V         GND\t    \r\n2\t Top Rail\t 3.50 V      TOP_R\t    \r\n3\t Bottom Rail\t 3.50 V      BOT_R\t    \r\n4\t DAC 0\t\t 3.33 V      DAC_0,BUF_IN\t    \r\n5\t DAC 1\t\t 0.00 V      DAC_1\t    \r\n"
+      responseConfig:
+        delay: 10ms
+        jitterMax: 5ms
+        chunked: false
+        chunkSize: 0
+        chunkDelay: 0s
