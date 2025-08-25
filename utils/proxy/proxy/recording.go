@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
@@ -39,8 +40,8 @@ type Recorder struct {
 	logger   *log.Logger
 	filename string
 	requests map[string]emulator.RequestResponse
-	reqChan  chan string
-	resChan  chan emulator.ResponseChunk
+	reqChan  chan []byte
+	resChan  chan []byte
 }
 
 // NewRecorder creates a new Recorder instance
@@ -49,18 +50,18 @@ func NewRecorder(logger *log.Logger, filename string) *Recorder {
 		logger:   logger,
 		filename: filename,
 		requests: make(map[string]emulator.RequestResponse),
-		reqChan:  make(chan string),
-		resChan:  make(chan emulator.ResponseChunk),
+		reqChan:  make(chan []byte),
+		resChan:  make(chan []byte),
 	}
 }
 
-func (r *Recorder) RecordRequest(req string) {
+func (r *Recorder) RecordRequest(req []byte) {
 	r.logger.Printf("Recording request: %s", req)
 	r.reqChan <- req
 }
 
-func (r *Recorder) RecordResponse(res emulator.ResponseChunk) {
-	r.logger.Printf("Recording response chunk: %s", res.Data)
+func (r *Recorder) RecordResponse(res []byte) {
+	r.logger.Printf("Recording response chunk: %s", res)
 	r.resChan <- res
 }
 
@@ -112,20 +113,34 @@ func (r *Recorder) recordLoop(ctx context.Context) {
 			r.logger.Printf("Received request to record: %s", req)
 			currentRequestTime = time.Now()
 
-			if _, exists := r.requests[req]; !exists {
-				r.requests[req] = emulator.RequestResponse{
-					Request: req,
+			reqStr := string(req)
+
+			if _, exists := r.requests[reqStr]; !exists {
+				r.requests[reqStr] = emulator.RequestResponse{
+					Request: reqStr,
 					Responses: []emulator.ResponseOption{
 						{Chunks: []emulator.ResponseChunk{}},
 					},
 				}
+			} else {
+				// Append a new response option for subsequent responses to the same request
+				r.requests[reqStr] = emulator.RequestResponse{
+					Request: reqStr,
+					Responses: append(r.requests[reqStr].Responses, emulator.ResponseOption{
+						Chunks: []emulator.ResponseChunk{},
+					}),
+				}
 			}
 
-			currentResponse = &r.requests[req].Responses[len(r.requests[req].Responses)-1]
-		case chunk := <-r.resChan:
+			currentResponse = &r.requests[reqStr].Responses[len(r.requests[reqStr].Responses)-1]
+		case res := <-r.resChan:
 			if currentResponse == nil {
-				r.logger.Printf("Warning: %v: %s", ErrResponseWithoutRequest, chunk.Data)
+				r.logger.Printf("Warning: %v: %s", ErrResponseWithoutRequest, res)
 				continue
+			}
+
+			chunk := emulator.ResponseChunk{
+				Data: strconv.Quote(string(res)),
 			}
 
 			// Set the delay based on the time since the request was recorded

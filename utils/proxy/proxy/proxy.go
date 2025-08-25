@@ -18,6 +18,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -28,7 +29,6 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/detiber/k8s-jumperless/utils/jumperless"
-	"github.com/detiber/k8s-jumperless/utils/jumperless-emulator/emulator"
 	"github.com/detiber/k8s-jumperless/utils/proxy/proxy/config"
 	"go.bug.st/serial"
 )
@@ -237,7 +237,7 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				if os.IsTimeout(err) {
 					continue // Timeout is expected
 				}
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					p.logger.Printf("Virtual port client disconnected")
 					continue
 				}
@@ -249,7 +249,7 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				data := buffer[:n]
 
 				// // Record request
-				p.recorder.RecordRequest(string(data))
+				p.recorder.RecordRequest(data)
 
 				// Forward to real port
 				if _, err := p.realPort.Write(data); err != nil {
@@ -300,9 +300,7 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 			if n > 0 {
 				data := buffer[:n]
 
-				p.recorder.RecordResponse(emulator.ResponseChunk{
-					Data: string(data),
-				})
+				p.recorder.RecordResponse(data)
 
 				// Forward to virtual port
 				if _, err := p.pseudoTTY.Write(data); err != nil {

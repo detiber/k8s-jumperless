@@ -93,7 +93,8 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "emulator",
 		Short: "Jumperless emulator",
-		Long:  `An emulator for Jumperless hardware that allows applications to interact with a virtual serial port simulating the Jumperless device.`,
+		Long: `An emulator for Jumperless hardware that allows applications to interact with a virtual serial port ` +
+			`simulating the Jumperless device.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			configFile, err := cmd.Flags().GetString(cfgConfig)
 			if err != nil {

@@ -24,6 +24,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -123,7 +124,7 @@ func (e *Emulator) handleRequests(ctx context.Context) {
 				if os.IsTimeout(err) {
 					continue // Timeout is expected
 				}
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					e.logger.Printf("Client disconnected")
 					continue
 				}
@@ -200,6 +201,23 @@ func (e *Emulator) sendResponse(mapping *config.RequestResponse) error {
 		}
 
 		responseText := chunk.Data
+		if strings.HasPrefix(responseText, "\"") && strings.HasSuffix(responseText, "\"") {
+			// Unquote if it's a quoted string
+			unquoted, err := strconv.Unquote(responseText)
+			if err != nil {
+				e.logger.Printf("Warning: failed to unquote response chunk %q: %v", responseText, err)
+			} else {
+				responseText = unquoted
+			}
+		}
+
+		n, err := e.pseudoTTY.Write([]byte(responseText))
+		if err != nil {
+			return fmt.Errorf("failed to write response to pty: %w", err)
+		}
+		if n != len(responseText) {
+			return fmt.Errorf("partial write to pty: wrote %d of %d bytes", n, len(responseText))
+		}
 
 		e.logger.Printf("Sent response chunk: %q", responseText)
 	}
