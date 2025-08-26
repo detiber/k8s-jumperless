@@ -17,6 +17,7 @@ limitations under the License.
 package proxy
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -199,11 +200,33 @@ func (p *Proxy) tryCleanup() {
 func (p *Proxy) Stop() error {
 	// Cancel proxy goroutines
 	if p.cancelV2R != nil {
+		// attempt to cancel between reads/writes
 		p.cancelV2R(nil)
+
+		// Give some time for an active read/write to finish
+		time.Sleep(100 * time.Millisecond)
+
+		// Force close the pseudo TTY to unblock any active reads
+		if err := p.pseudoTTY.Close(); err != nil {
+			p.logger.Printf("Warning: failed to close pseudo TTY: %v", err)
+		} else {
+			p.logger.Printf("Closed pseudo TTY: %s", p.pseudoTTY.Name())
+		}
 	}
 
 	if p.cancelR2V != nil {
+		// attempt to cancel between reads/writes
 		p.cancelR2V(nil)
+
+		// Give some time for an active read/write to finish
+		time.Sleep(100 * time.Millisecond)
+
+		// Force close the real port to unblock any active reads
+		if err := p.realPort.Close(); err != nil {
+			p.logger.Printf("Warning: failed to close real serial port: %v", err)
+		} else {
+			p.logger.Printf("Closed real serial port: %s", p.config.RealPort)
+		}
 	}
 
 	if p.cancelRecorder != nil {
@@ -232,11 +255,6 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 			p.logger.Printf("Context done, stopping proxyVirtualToReal")
 			return
 		default:
-			// Set read timeout
-			if err := p.pseudoTTY.SetReadDeadline(time.Now().Add(500 * time.Millisecond)); err != nil {
-				p.logger.Printf("Warning: failed to set read deadline: %v", err)
-			}
-
 			n, err := p.pseudoTTY.Read(buffer)
 			if err != nil {
 				if os.IsTimeout(err) {
@@ -254,14 +272,14 @@ func (p *Proxy) proxyVirtualToReal(ctx context.Context) {
 				data := buffer[:n]
 
 				// // Record request
-				p.recorder.RecordRequest(data)
+				p.recorder.RecordRequest(bytes.Clone(data))
 
 				// Forward to real port
-				if _, err := p.realPort.Write(data); err != nil {
+				if _, err := p.realPort.Write(bytes.Clone(data)); err != nil {
 					p.logger.Printf("Error writing to real port: %v", err)
 				}
 
-				p.logger.Printf("Request: %q", string(data))
+				p.logger.Printf("Request: %q", data)
 
 				if err := p.realPort.Drain(); err != nil {
 					p.logger.Printf("Error draining real port: %v", err)
@@ -276,12 +294,6 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 	p.logger.Printf("Starting to proxy data from real port %s to virtual port %s", p.config.RealPort, p.virtualTTY.Name())
 
 	buffer := make([]byte, p.config.BufferSize)
-
-	// Set read timeout
-	if err := p.realPort.SetReadTimeout(500 * time.Millisecond); err != nil {
-		p.logger.Printf("Error setting read timeout: %v", err)
-		return
-	}
 
 	defer func() {
 		p.logger.Printf("Stopped proxying data from real port to virtual port")
@@ -305,14 +317,14 @@ func (p *Proxy) proxyRealToVirtual(ctx context.Context) {
 			if n > 0 {
 				data := buffer[:n]
 
-				p.recorder.RecordResponse(data)
+				p.recorder.RecordResponse(bytes.Clone(data))
 
 				// Forward to virtual port
-				if _, err := p.pseudoTTY.Write(data); err != nil {
+				if _, err := p.pseudoTTY.Write(bytes.Clone(data)); err != nil {
 					p.logger.Printf("Error writing to virtual port: %v", err)
 				}
 
-				p.logger.Printf("Response: %q", string(data))
+				p.logger.Printf("Response: %q", data)
 			}
 		}
 	}
