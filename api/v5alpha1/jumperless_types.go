@@ -64,19 +64,48 @@ type DAC struct {
 
 // JumperlessHost represents a host that is connected to the Jumperless device.
 type JumperlessHost struct {
+	// Local specifies that the Jumperless device is connected via a local serial port.
+	// Exactly one of Local or SSH must be specified.
+	// +optional
+	Local *JumperlessHostLocal `json:"local,omitempty"`
+
+	// SSH specifies that the Jumperless device is connected via SSH to a remote host.
+	// Exactly one of Local or SSH must be specified.
+	// +optional
+	SSH *JumperlessHostSSH `json:"ssh,omitempty"`
+}
+
+type JumperlessHostSSH struct {
 	// Hostname is the hostname or IPAddress of the connected host.
 	// +required
 	Hostname string `json:"hostname"`
 
 	// Username is the username to use when connecting to the host.
-	// +optional
-	Username *string `json:"username,omitempty"`
+	// +required
+	Username string `json:"username"`
 
 	// SSHKeyRef is a reference to a Kubernetes Secret that contains the SSH private key
 	// to use when connecting to the host.
 	// The Secret must contain a key named "ssh-privatekey" with the private key data.
+	// +required
+	SSHKeyRef corev1.SecretReference `json:"sshKeyRef"`
+
+	// Port is the SSH port to use when connecting to the host.
+	// +default=22
 	// +optional
-	SSHKeyRef *corev1.SecretReference `json:"sshKeyRef,omitempty"`
+	Port *int32 `json:"port,omitempty"`
+}
+
+type JumperlessHostLocal struct {
+	// Port is the local serial port that is connected to the Jumperless device.
+	// +optional
+	Port *string `json:"port,omitempty"`
+
+	// BaudRate is the baud rate to use when connecting to the local serial port.
+	// Common values are 9600, 19200, 38400, 57600, 115200.
+	// +default=115200
+	// +optional
+	BaudRate *int32 `json:"baudRate,omitempty"`
 }
 
 // JumperlessSpec defines the desired state of Jumperless
@@ -132,8 +161,18 @@ type Net struct {
 	// Examples of valid values: "0V", "3.3V", "-1.5V", "7.8V"
 	// Examples of invalid values: "10V", "-9V", "3.33V", "abc"
 	// +kubebuilder:validation:Pattern=`^(-?([0-7](\.[0-9]{1,2})?|8(\.0{1,2})?))V$`
-	// +required
-	Voltage string `json:"voltage"`
+	// +optional
+	Voltage *string `json:"voltage,omitempty"`
+
+	// Color is the color of the net.
+	// Valid values are standard color names like "red", "green", "blue", etc.
+	// +optional
+	Color *string `json:"color,omitempty"`
+
+	// Data includes any additional data associated with the net.
+	// This field is optional and may be empty.
+	// +optional
+	Data *string `json:"data,omitempty"`
 
 	// Nodes is a list of node identifiers that are part of this net.
 	// Each node identifier is a string that uniquely identifies a node on the Jumperless device.

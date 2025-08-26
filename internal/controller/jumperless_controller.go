@@ -32,9 +32,11 @@ import (
 
 	jumperlessv5alpha1 "github.com/detiber/k8s-jumperless/api/v5alpha1"
 	"github.com/detiber/k8s-jumperless/internal/controller/local"
+	"github.com/detiber/k8s-jumperless/jumperless"
 )
 
 var ErrNotImplemented = errors.New("not yet implemented")
+var ErrUnknownHostType = errors.New("unknown host type")
 
 // JumperlessReconciler reconciles a Jumperless object
 type JumperlessReconciler struct {
@@ -101,21 +103,19 @@ func (r *JumperlessReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	// Determine if we are running on localhost or a remote host
 	// and perform the appropriate reconciliation.
-	// If no hostname is specified, default to localhost.
-	switch hostname := instance.Spec.Host.Hostname; hostname {
-	case "":
-		log.Info("No hostname specified, defaulting to localhost")
-		fallthrough
-	case "localhost", "127.0.0.1", "::1":
+	switch {
+	case instance.Spec.Host.Local != nil:
 		if err := r.reconcileLocal(ctx, instance, status); err != nil {
 			log.Error(err, "unable to reconcile Jumperless locally")
 			return ctrl.Result{}, fmt.Errorf("unable to reconcile Jumperless locally: %w", err)
 		}
-	default:
+	case instance.Spec.Host.SSH != nil:
 		if err := r.reconcileRemote(ctx, instance, status); err != nil {
-			log.Error(err, "unable to reconcile Jumperless remotely", "hostname", hostname)
+			log.Error(err, "unable to reconcile Jumperless remotely")
 			return ctrl.Result{}, fmt.Errorf("unable to reconcile Jumperless remotely: %w", err)
 		}
+	default:
+		return ctrl.Result{}, fmt.Errorf("unknown host type: %w", ErrUnknownHostType)
 	}
 
 	log.Info("Successfully reconciled Jumperless", "name", instance.Name, "namespace", instance.Namespace)
@@ -196,22 +196,11 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 		}
 	}
 
-	ports, err := local.EnumerateSerialPorts()
-	if err != nil {
-		// set ready condition to false with no serial port found reason
-		// status will be updated in the deferred patch in Reconcile
-		meta.SetStatusCondition(&status.Conditions, metav1.Condition{
-			Type:               jumperlessv5alpha1.ConditionReady,
-			Status:             metav1.ConditionFalse,
-			Reason:             "NoSerialPortFound",
-			Message:            fmt.Sprintf("Unable to find Jumperless serial port: %v", err),
-			ObservedGeneration: instance.Generation,
-		})
+	port := ptr.Deref(instance.Spec.Host.Local.Port, "")
+	var version string
+	baudRate := ptr.Deref(instance.Spec.Host.Local.BaudRate, 0)
 
-		return fmt.Errorf("unable to enumerate serial ports: %w", err)
-	}
-
-	port, version, err := local.FindJumperlessPort(ctx, ports)
+	j, err := jumperless.NewJumperless(ctx, port, int(baudRate))
 	if err != nil {
 		// set ready condition to false with no jumperless found reason
 		// status will be updated in the deferred patch in Reconcile
@@ -219,28 +208,47 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 			Type:               jumperlessv5alpha1.ConditionReady,
 			Status:             metav1.ConditionFalse,
 			Reason:             "NoJumperlessFound",
-			Message:            fmt.Sprintf("Unable to find Jumperless serial port: %v", err),
+			Message:            "No Jumperless device found on specified port: " + port,
 			ObservedGeneration: instance.Generation,
 		})
 
 		return fmt.Errorf("unable to find Jumperless port: %w", err)
 	}
-
-	if port == nil {
+	if j == nil {
 		// set ready condition to false with no jumperless port found reason
 		// status will be updated in the deferred patch in Reconcile
 		meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 			Type:               jumperlessv5alpha1.ConditionReady,
 			Status:             metav1.ConditionFalse,
-			Reason:             "NoJumperlessPortFound",
-			Message:            "No Jumperless serial port found",
+			Reason:             "NoJumperlessFound",
+			Message:            "No Jumperless device found on specified port: " + port,
 			ObservedGeneration: instance.Generation,
 		})
 
-		return fmt.Errorf("no Jumperless port found: %w", local.ErrNoSerialPortFound)
+		return fmt.Errorf("no Jumperless device found on specified port %s: %w", port, jumperless.ErrNoJumperlessFound)
 	}
 
-	log.Info("Found Jumperless", "port", port, "firmwareVersion", version)
+	if err := j.OpenPort(); err != nil {
+		// set ready condition to false with port open error reason
+		// status will be updated in the deferred patch in Reconcile
+		meta.SetStatusCondition(&status.Conditions, metav1.Condition{
+			Type:               jumperlessv5alpha1.ConditionReady,
+			Status:             metav1.ConditionFalse,
+			Reason:             "PortOpenError",
+			Message:            "Unable to open Jumperless port: " + err.Error(),
+			ObservedGeneration: instance.Generation,
+		})
+		return fmt.Errorf("unable to open Jumperless port: %w", err)
+	}
+	defer func() {
+		if err := j.ClosePort(); err != nil {
+			log.Error(err, "unable to close Jumperless port", "port", j.GetPort())
+		}
+	}()
+
+	version = j.GetVersion()
+	port = j.GetPort()
+	log.Info("Verified Jumperless device on port", "port", port, "firmwareVersion", version)
 
 	meta.SetStatusCondition(&status.Conditions, metav1.Condition{
 		Type:               jumperlessv5alpha1.ConditionReady,
@@ -250,12 +258,12 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 		ObservedGeneration: instance.Generation,
 	})
 
-	status.LocalPort = ptr.To(port.Name)
+	status.LocalPort = ptr.To(port)
 	status.FirmwareVersion = ptr.To(version)
 
 	dacStatus := []jumperlessv5alpha1.DACStatus{}
 	for _, channel := range jumperlessv5alpha1.DACChannels {
-		dacVoltage, err := local.GetDAC(ctx, port.Name, channel)
+		dacVoltage, err := local.GetDAC(j, channel)
 		if err != nil {
 			log.Error(err, "unable to get DAC voltage", "channel", channel)
 			return fmt.Errorf("unable to get DAC voltage for channel %s: %w", channel, err)
@@ -273,7 +281,7 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 
 	status.DACS = dacStatus
 
-	nets, err := local.GetNets(ctx, port.Name)
+	nets, err := local.GetNets(j)
 	if err != nil {
 		log.Error(err, "unable to get nets")
 		return fmt.Errorf("unable to get nets: %w", err)
@@ -281,7 +289,7 @@ func (r *JumperlessReconciler) reconcileLocal(ctx context.Context, instance *jum
 
 	status.Nets = nets
 
-	config, err := local.GetConfig(ctx, port.Name)
+	config, err := local.GetConfig(j)
 	if err != nil {
 		log.Error(err, "unable to get Jumperless config")
 		return fmt.Errorf("unable to get Jumperless config: %w", err)

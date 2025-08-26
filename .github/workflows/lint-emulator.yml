@@ -1,0 +1,24 @@
+name: Lint Emulator
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'utils/emulator/**'
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'utils/emulator/**'
+
+jobs:
+  lint-emulator:
+    uses: ./.github/workflows/_lint.yml
+    with:
+      go-version-file: "utils/emulator/go.mod"
+      go-cache-dependency-path: "utils/emulator/go.sum"
+      module-working-directory: "utils/emulator"

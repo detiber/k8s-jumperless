@@ -1,6 +1,11 @@
 # k8s-jumperless
 A Kubernetes operator built with Kubebuilder v4.7.1 that declaratively manages [Jumperless v5](https://jumperless-docs.readthedocs.io/) hardware. This operator provides Custom Resources for managing device configuration through Kubernetes APIs.
 
+The project includes comprehensive testing utilities:
+- **k8s-jumperless manager**: The main Kubernetes controller
+- **emulator**: Hardware emulator for testing without physical devices
+- **proxy**: Recording proxy for capturing real device interactions
+
 **ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
 ## Working Effectively
@@ -9,23 +14,32 @@ A Kubernetes operator built with Kubebuilder v4.7.1 that declaratively manages [
 Run these commands in order to set up the development environment:
 
 1. **Download dependencies**: `go mod tidy` -- takes 40 seconds
-2. **Build the project**: `make build` -- takes 3 minutes. NEVER CANCEL. Set timeout to 5+ minutes.
+   - For all modules: `make tidy-all` -- takes 2 minutes
+2. **Build the project**: `make build-all` -- takes 3 minutes. NEVER CANCEL. Set timeout to 5+ minutes.
    - Generates Go code with stringer
    - Generates CRDs and RBAC manifests with controller-gen  
    - Formats and vets Go code
    - Builds manager binary to `bin/manager`
-3. **Run tests**: `make test` -- takes 40 seconds. NEVER CANCEL. Set timeout to 2+ minutes.
+   - Builds emulator binary to `bin/emulator`
+   - Builds proxy binary to `bin/proxy`
+3. **Run tests**: `make test-all` -- takes 2 minutes. NEVER CANCEL. Set timeout to 4+ minutes.
    - Downloads and sets up the latest release of envtest binaries for latest release of Kubernetes
-   - Runs unit tests
-4. **Run linter**: `make lint` -- takes 4 minutes. NEVER CANCEL. Set timeout to 6+ minutes.
-   - Downloads golangci-lint v2.1.6
-   - Runs extensive linting with 60+ enabled linters
+   - Runs unit tests for manager, emulator, and proxy modules
+4. **Run linter**: `make lint-all` -- takes 8 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
+   - Downloads golangci-lint v2.4.0
+   - Runs extensive linting with 60+ enabled linters across all modules
 
 ### Development Workflow
-- **Format code**: `make fmt` -- runs `go fmt ./...`
-- **Vet code**: `make vet` -- runs `go vet ./...`  
+- **Format code**: `make fmt-all` -- runs `go fmt ./...` across all modules
+- **Vet code**: `make vet-all` -- runs `go vet ./...` across all modules
+- **Tidy modules**: `make tidy-all` -- runs `go mod tidy` across all modules  
 - **Generate manifests**: `make manifests` -- regenerates CRDs and RBAC
 - **Generate Go code**: `make gen-go` -- runs `go generate` for type definitions
+
+### Utility Development
+- **Build utilities**: `make build-emulator build-proxy` -- builds utility binaries
+- **Test utilities**: `make test-emulator test-proxy` -- runs utility tests
+- **Lint utilities**: `make lint-emulator lint-proxy` -- lints utility code
 
 ### Running the Operator
 - **Install manifests**: `make install` -- installs manifests to Kubernetes cluster
@@ -40,10 +54,11 @@ Run these commands in order to set up the development environment:
 ## Validation
 
 ### Always Run Before Committing
-1. **Build validation**: `make build` -- ensure clean build
-2. **Test validation**: `make test` -- ensure all tests pass  
-3. **Lint validation**: `make lint` -- ensure code style compliance
-4. **Format validation**: `make fmt` && check no changes with `git diff` (if changes exist, stage and commit them)
+1. **Module validation**: `make tidy-all` && check no changes with `git diff` (if changes exist, stage and commit them)
+1. **Build validation**: `make build-all` -- ensure clean build for all binaries
+2. **Test validation**: `make test-all` -- ensure all tests pass across all modules  
+3. **Lint validation**: `make lint-all` -- ensure code style compliance across all modules
+4. **Format validation**: `make fmt-all` && check no changes with `git diff` (if changes exist, stage and commit them)
 
 ### Manual Testing Scenarios
 After making changes to the operator:
@@ -58,6 +73,7 @@ After making changes to the operator:
    - **Note**: kubectl validation requires active cluster connection (use Kind if no cluster access)
 
 3. **Test controller logic**:
+   - Run `make test` to test controller logic
    - Review controller tests in `internal/controller/`
    - Add new test cases for new functionality
    - Ensure test coverage remains above 25% (use `go test -cover ./...` to check coverage)
@@ -66,6 +82,11 @@ After making changes to the operator:
    - Run `make gen-go` to regenerate string methods
    - Verify `api/v5alpha1/dacchannel_string.go` contains String() method
    - Check that DAC channel constants work: `DAC0`, `DAC1`, `TOP_RAIL`, `BOTTOM_RAIL`
+
+5. **Test utilities**:
+   - Run `make test-emulator test-proxy` to test all utilities
+   - Test emulator: `./bin/emulator --help` should show cobra-based CLI
+   - Test proxy: `./bin/proxy --help` should show recording options
 
 ### End-to-End Testing (Optional)
 E2E tests require Kind cluster setup but may fail in some environments:
@@ -83,7 +104,9 @@ E2E tests require Kind cluster setup but may fail in some environments:
 - **CRD manifests**: `config/crd/bases/`
 - **Sample resources**: `config/samples/`
 - **Build configuration**: `Makefile`
-- **Go module**: `go.mod` (Go 1.24+ required)
+- **Go module**: `go.mod` (Go 1.25+ required)
+- **Emulator utility**: `utils/emulator/` (independent Go module)
+- **Proxy utility**: `utils/proxy/` (independent Go module)
 
 ### Repository Structure Quick Reference
 ```
@@ -96,6 +119,10 @@ E2E tests require Kind cluster setup but may fail in some environments:
 │   ├── rbac/              # Role-based access control
 │   └── samples/           # Example Jumperless resources
 ├── internal/controller/    # Controller implementation
+├── jumperless/             # Common code for interacting with Jumperless devices
+├── utils/                  # Testing and development utilities
+│   ├── emulator/ # Hardware emulator (independent Go module)
+│   ├── proxy/   # Recording proxy (independent Go module)
 ├── test/                  # E2E and utility test code
 ├── Makefile               # Build automation
 └── PROJECT                # Kubebuilder project metadata
@@ -109,27 +136,58 @@ The operator manages `Jumperless` resources with these key fields:
   - `voltage`: String with voltage value (e.g., "3.3V", range -8V to +8V)
   - `save`: Boolean to persist settings across power cycles
 
+### Working with Testing Utilities
+
+#### Jumperless Emulator (`utils/emulator`)
+A hardware emulator for testing without physical devices:
+- **Hardware simulation**: 4 DAC channels, 5 ADC channels, 2 INA sensors, 10 GPIO pins
+- **Node system**: Complete Jumperless node topology with constants and aliases
+- **Dynamic responses**: Placeholders that reflect current hardware state
+- **CLI**: Cobra/Viper-based with comprehensive configuration support
+
+```bash
+# Build and run emulator
+make build-emulator
+./bin/emulator --config config.yaml --port /tmp/jumperless --verbose
+```
+
+#### Jumperless Proxy (`utils/proxy`)
+Recording proxy for capturing real device interactions:
+- **Transparent proxying**: Full serial configuration support
+- **Recording**: YAML, JSON, or log formats with timing capture
+- **Config generation**: Automatic emulator config from recorded sessions
+
+```bash
+# Build and run proxy
+make build-proxy
+./bin/proxy --real-port /dev/ttyUSB0 --virtual-port /tmp/proxy --recording-file session.yaml
+```
+
 ### Development Tips
 - Always run code generation (`make generate`, `make gen-go`, `make manifests`) after modifying API types
 - The stringer tool auto-generates string methods for DACChannel enum
 - Controller-gen automatically generates CRD schemas from Go struct tags
 - Use `+kubebuilder:` comment annotations to customize CRD generation
 - Check `Makefile` and `go.mod` for current tool versions if build errors occur due to version drift
+- Each utils subpackage has its own `go.mod` and can be built independently
+- Use `make tidy-all` to clean up all Go modules after dependency changes
+- The emulator and proxy use cobra/viper for CLI and configuration management
 
 ### CI Integration
-This development workflow mirrors the CI process. CI enforces build, test, and lint validation for all contributions.
+This development workflow mirrors the CI process. CI enforces build, test, and lint validation for all contributions across all modules (manager, emulator, and proxy).
 
 ### Common Error Scenarios
-- **Build fails**: Run `go mod tidy` first, ensure Go 1.24+ installed (check `go.mod` for current version requirements)
+- **Build fails**: Run `go mod tidy` or `make tidy-all` first, ensure Go 1.25+ installed (check `go.mod` for current version requirements)
 - **Tests fail**: Check envtest setup, may need different Kubernetes version
-- **Lint fails**: Review `.golangci.yml` for enabled linters, use `make lint-fix` for auto-fixes
+- **Lint fails**: Review `.golangci.yml` for enabled linters, use `make lint-fix-all` for auto-fixes across all modules
 - **Manager won't start**: Ensure valid kubeconfig and cluster connectivity, try creating a kind cluster
 - **E2E tests fail**: Kind cluster creation issues, requires working Docker runtime
+- **Emulator/Proxy build fails**: Check `utils/*/go.mod` for module dependencies, run `make tidy-all`
 
 ### Performance Expectations
-- **Initial setup**: ~6-7 minutes (mod download + build + test + lint)
-- **Incremental builds**: 30-60 seconds after code changes
-- **Test cycles**: 40 seconds for unit tests
-- **Full CI validation**: ~4-5 minutes (build + test + lint)
+- **Initial setup**: ~10-12 minutes (mod download + build + test + lint across all modules)
+- **Incremental builds**: 30-60 seconds for manager, 15-30 seconds for utilities after code changes
+- **Test cycles**: 2 minutes for all tests (`make test-all`)
+- **Full CI validation**: ~8-10 minutes (build + test + lint across all modules)
 
-**CRITICAL**: Always use long timeouts (5+ minutes for builds, 2+ minutes for tests, 6+ minutes for linting) and NEVER CANCEL long-running operations. Build and lint operations are expected to take several minutes.
+**CRITICAL**: Always use long timeouts (5+ minutes for builds, 4+ minutes for tests, 10+ minutes for linting) and NEVER CANCEL long-running operations. Build and lint operations are expected to take several minutes across all modules.
