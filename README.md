@@ -124,7 +124,7 @@ make build-proxy      # Build proxy
 
 ### Testing with Emulator
 
-The emulator provides comprehensive hardware simulation with cobra/viper CLI:
+The emulator provides hardware simulation:
 
 ```sh
 # create a kind cluster
@@ -158,19 +158,6 @@ docker stop jumperless-emulator
 ```
 
 ### Recording with Proxy
-
-The proxy records real device interactions with full serial configuration support:
-
-```sh
-# Start proxy with enhanced CLI (requires real Jumperless device)
-./bin/proxy \
-  --real-port /dev/ttyUSB0 \
-  --virtual-port /tmp/jumperless-proxy \
-  --recording-file recordings/session.yaml \
-  --verbose
-
-# Use the virtual port for testing, then stop proxy to save recording
-```
 
 To generate an emulator config using the controller
 ```sh

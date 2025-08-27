@@ -56,12 +56,12 @@ func NewRecorder(logger *log.Logger, filename string) *Recorder {
 }
 
 func (r *Recorder) RecordRequest(req []byte) {
-	r.logger.Printf("Recording request: %s", req)
+	r.logger.Printf("Recording request: %q", req)
 	r.reqChan <- req
 }
 
 func (r *Recorder) RecordResponse(res []byte) {
-	r.logger.Printf("Recording response chunk: %s", res)
+	r.logger.Printf("Recording response chunk: %q", res)
 	r.resChan <- res
 }
 

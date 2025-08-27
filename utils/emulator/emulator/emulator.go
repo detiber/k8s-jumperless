@@ -115,11 +115,6 @@ func (e *Emulator) handleRequests(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			// Set read timeout
-			if err := e.pseudoTTY.SetReadDeadline(time.Now().Add(500 * time.Millisecond)); err != nil {
-				e.logger.Printf("Warning: failed to set read deadline: %v", err)
-			}
-
 			n, err := e.pseudoTTY.Read(buffer)
 			if err != nil {
 				if os.IsTimeout(err) {
@@ -202,14 +197,14 @@ func (e *Emulator) sendResponse(mapping *config.RequestResponse) error {
 		}
 
 		responseText := chunk.Data
-		if strings.HasPrefix(responseText, "\"") && strings.HasSuffix(responseText, "\"") {
-			// Unquote if it's a quoted string
-			unquoted, err := strconv.Unquote(responseText)
-			if err != nil {
-				e.logger.Printf("Warning: failed to unquote response chunk %q: %v", responseText, err)
-			} else {
-				responseText = unquoted
-			}
+
+		// try to unquote the response chunk
+		unquoted, err := strconv.Unquote(responseText)
+		if err != nil {
+			// if unquoting fails, just use the original string
+			e.logger.Printf("Warning: failed to unquote response chunk %q: %v", responseText, err)
+		} else {
+			responseText = unquoted
 		}
 
 		n, err := e.pseudoTTY.Write([]byte(responseText))
@@ -257,9 +252,21 @@ func (e *Emulator) tryCleanup() {
 
 // Stop stops the emulator
 func (e *Emulator) Stop() error {
-	// Cancel proxy goroutines
+	// Cancel emulator goroutines
 	if e.cancel != nil {
+		// attempt to cancel between reads/writes
 		e.cancel(nil)
+
+		// Give some time for an active read/write to finish
+		time.Sleep(100 * time.Millisecond)
+
+		// Force close the pseudo TTY to unblock any active reads
+		if err := e.pseudoTTY.Close(); err != nil {
+			e.logger.Printf("Warning: failed to close pseudo TTY: %v", err)
+		} else {
+			e.logger.Printf("Closed pseudo TTY: %s", e.pseudoTTY.Name())
+		}
+
 	}
 
 	e.wg.Wait()
