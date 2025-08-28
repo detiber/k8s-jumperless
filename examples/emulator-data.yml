@@ -1,703 +1,766 @@
 bufferSize: 0
 virtualPort: ""
 mappings:
-    - request: '>print_nets()'
-      responses:
-        - chunks:
-            - data: '"Python> "'
-              delay: 5.681854ms
-              jitterMax: 568.185µs
-            - data: '"\rPython> \x1b[38;5;255mp\x1b[0m"'
-              delay: 760.207µs
-              jitterMax: 76.02µs
-            - data: '"\rPython> \x1b[38;5;255mpr\x1b[0m\rPython> "'
-              delay: 614.167µs
-              jitterMax: 61.416µs
-            - data: '"\x1b[38;5;255mpri\x1b[0m"'
-              delay: 566.019µs
-              jitterMax: 56.601µs
-            - data: '"\rPython> \x1b[38;5;255mprin\x1b[0m"'
-              delay: 495.185µs
-              jitterMax: 49.518µs
-            - data: '"\rPython> \x1b[38;5;214mprint\x1b[0m"'
-              delay: 592.452µs
-              jitterMax: 59.245µs
-            - data: '"\rPython> \x1b[38;5;255mprint_\x1b[0m"'
-              delay: 313.552µs
-              jitterMax: 31.355µs
-            - data: '"\rPython> \x1b[38;5;255mprint_n\x1b[0m"'
-              delay: 829.616µs
-              jitterMax: 82.961µs
-            - data: '"\rPython> \x1b[38;5;255mprint_ne\x1b[0m"'
-              delay: 183.049µs
-              jitterMax: 18.304µs
-            - data: '"\rPython> \x1b[38;5;255mprint_net\x1b[0m"'
-              delay: 380.668µs
-              jitterMax: 38.066µs
-            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[0m"'
-              delay: 345.193µs
-              jitterMax: 34.519µs
-            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m(\x1b[0m"'
-              delay: 504.683µs
-              jitterMax: 50.468µs
-            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m()\x1b[0m"'
-              delay: 492.846µs
-              jitterMax: 49.284µs
-            - data: '"\r\n"'
-              delay: 531.489µs
-              jitterMax: 53.148µs
-            - data: '"\n\rIndex\tName\t\tVoltage\t    Nodes\t\n\r\x1b[38;5;48m1\t GND\t\t \x1b[38;5;48m0 V         GND       \t    \r\n\x1b[38;5;197m2\t Top Rail\t \x1b[38;5;197m0"'
-              delay: 4.266749ms
-              jitterMax: 426.674µs
-            - data: '".00 V      TOP_R     \t    \r\n\x1b[38;5;199m3\t Bottom Rail\t \x1b[38;5;199m0.00 V      BOT_R     \t    \r\n\x1b[38;5;222m4\t DAC 0\t\t \x1b[38;5;222m"'
-              delay: 265.865µs
-              jitterMax: 26.586µs
-            - data: '"3.33 V      DAC_0,BUF_IN\t    \r\n\x1b[38;5;116m5\t DAC 1\t\t \x1b[38;5;116m0.00 V      DAC_1     \t    \r\n\x1b[0m\n\rIndex\tName\t\tColor\t    Nodes  "'
-              delay: 161.34µs
-              jitterMax: 16.134µs
-            - data: '"         GPIO \r\n\x1b[38;5;176m6\t Net 6\t\t \b\b* \x1b[38;5;160mred    - h  GP_7,D2   \t    input - high\r\n\x1b[38;5;213m7\t Net 7\t\t \b\b* \x1b[38;5;1"'
-              delay: 260.17µs
-              jitterMax: 26.017µs
-            - data: '"60mred    - h  GP_8,D3   \t    input - high\r\n\x1b[38;5;147m8\t Net 8\t\t \x1b[38;5;160mred       "'
-              delay: 288.681µs
-              jitterMax: 28.868µs
-            - data: '"  UART_Rx,D1\t    \r\n\x1b[38;5;180m9\t Net 9"'
-              delay: 46.021µs
-              jitterMax: 4.602µs
-            - data: '"\t\t "'
-              delay: 15.884µs
-              jitterMax: 1.588µs
-            - data: '"\x1b[38;5;160mred         UART_Tx,D0\t    \r\n\x1b[0m"'
-              delay: 320.563µs
-              jitterMax: 32.056µs
-        - chunks:
-            - data: '"Python> "'
-              delay: 1.990478ms
-              jitterMax: 199.047µs
-            - data: '"\rPython> \x1b[38;5;255mp\x1b[0m"'
-              delay: 830.904µs
-              jitterMax: 83.09µs
-            - data: '"\rPython> \x1b[38;5;255mpr\x1b[0m"'
-              delay: 479.822µs
-              jitterMax: 47.982µs
-            - data: '"\rPython> "'
-              delay: 232.387µs
-              jitterMax: 23.238µs
-            - data: '"\x1b[38;5;255mpri\x1b[0m"'
-              delay: 374.267µs
-              jitterMax: 37.426µs
-            - data: '"\rPython> \x1b[38;5;255mprin\x1b[0m"'
-              delay: 500.747µs
-              jitterMax: 50.074µs
-            - data: '"\rPython> \x1b[38;5;214mprint\x1b[0m"'
-              delay: 1.143µs
-              jitterMax: 114ns
-            - data: '"\rPython> \x1b[38;5;255mprint_\x1b[0m"'
-              delay: 685.686µs
-              jitterMax: 68.568µs
-            - data: '"\rPython> \x1b[38;5;255mprint_n\x1b[0m"'
-              delay: 281.234µs
-              jitterMax: 28.123µs
-            - data: '"\rPython> \x1b[38;5;255mprint_ne\x1b[0m"'
-              delay: 418.581µs
-              jitterMax: 41.858µs
-            - data: '"\rPython> \x1b[38;5;255mprint_net\x1b[0m"'
-              delay: 589.479µs
-              jitterMax: 58.947µs
-            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[0m"'
-              delay: 337.973µs
-              jitterMax: 33.797µs
-            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m(\x1b[0m"'
-              delay: 407.444µs
-              jitterMax: 40.744µs
-            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m()\x1b[0m\r\n"'
-              delay: 395.044µs
-              jitterMax: 39.504µs
-            - data: '"\n\rIndex\tName\t\tVoltage\t    Nodes\t\n\r\x1b[38;5;48m1\t GND\t\t \x1b[38;5;48m0 V         GND       \t    \r\n\x1b[38;5;197m2\t Top Rail\t \x1b[38;5;197m0"'
-              delay: 5.387608ms
-              jitterMax: 538.76µs
-            - data: '".00 V      TOP_R     \t    \r\n\x1b[38;5;199m3\t Bottom Rail\t \x1b[38;5;199m0.00 V      BOT_R     \t    \r\n\x1b[38;5;222m4\t DAC 0\t\t \x1b[38;5;222m"'
-              delay: 164.804µs
-              jitterMax: 16.48µs
-            - data: '"3.33 V      DAC_0,BUF_IN\t    \r\n\x1b[38;5;116m5\t DAC 1\t\t \x1b[38;5;116m0.00 V      DAC_1     \t    \r\n\x1b[0m\n\rIndex\tName\t\tColor\t    Nodes  "'
-              delay: 248.053µs
-              jitterMax: 24.805µs
-            - data: '"         GPIO \r\n\x1b[38;5;176m6\t Net 6\t\t \b\b* \x1b[38;5;160mred    - h  GP_7,D2   \t    input - high\r\n\x1b[38;5;213m7\t Net 7\t\t \b\b* \x1b[38;5;1"'
-              delay: 181.342µs
-              jitterMax: 18.134µs
-            - data: '"60mred    - h  GP_8,D3   \t    input - high\r\n\x1b[38;5;147m8\t Net 8\t\t \x1b[38;5;160mred         UART_Rx,D1\t    \r\n"'
-              delay: 217.17µs
-              jitterMax: 21.717µs
-            - data: '"\x1b[38;5;180m9\t Net 9"'
-              delay: 126.677µs
-              jitterMax: 12.667µs
-            - data: '"\t\t "'
-              delay: 13.511µs
-              jitterMax: 1.351µs
-            - data: '"\x1b[38;5;160mred         UART_Tx,D0\t    \r\n\x1b[0m"'
-              delay: 791.847µs
-              jitterMax: 79.184µs
-    - request: "~"
-      responses:
-        - chunks:
-            - data: '"\r\n"'
-              delay: 1.412341ms
-              jitterMax: 141.234µs
-            - data: '"\n\rcopy / edit / paste any of these lines \n\rinto the main menu to change a setting\n\r\r\nJumperless Config:\n\r\r\n\x1b[38;5;196m\n`[config] firmware_version = 5.3.1.0;\r\n\n`[hardware] generation = 5;"'
-              delay: 1.037274162s
-              jitterMax: 103.727416ms
-            - data: '"\r\n`[hardware] revision = 5;\r\n`[hardware] probe_revision = 5;\r\n"'
-              delay: 39.958µs
-              jitterMax: 3.995µs
-            - data: '"\x1b[38;5;214m"'
-              delay: 1.108µs
-              jitterMax: 110ns
-            - data: '"\n`[dacs] "'
-              delay: 341.05µs
-              jitterMax: 34.105µs
-            - data: '"top_rail = "'
-              delay: 43.41µs
-              jitterMax: 4.341µs
-            - data: '"0."'
-              delay: 171.873µs
-              jitterMax: 17.187µs
-            - data: '"00;\r\n`[dacs] bottom_rail = 0.00;\r\n`[dacs] dac_0 = 3.33;\r\n`[dacs] dac_1 = 0.00;\r\n`[dacs] set_dacs_on_boot = false;\r\n`[dacs] set_r"'
-              delay: 1.178289ms
-              jitterMax: 117.828µs
-            - data: '"ails_on_boot = true;\r\n`[dacs] probe_power_dac = 0;\r\n`[dacs] limit_max = 8.00;\r\n`[dacs] limit_min = -8.00;\r\n\x1b[38;5;154m\n`[debug] file_parsing = false;\r\n`[debug] net_manager = false;\r\n`[debug] nets_to_chips = false;\r\n`[debug] nets_to_chips_alt = false;\r\n`[de"'
-              delay: 474.813µs
-              jitterMax: 47.481µs
-            - data: '"bug] leds = false;\r\n`[debug] logic_analyzer = true;\r\n`[debug] arduino = 0;\r\n\x1b[38;5;46m\n`[routing] stack_paths = 2;\r\n`[routing] stack_rails = 3;\r\n`[routing] stack_dacs = 0;\r\n`[routing] rail_priority = 1;\r\n\x1b[38;5;50m\n`[calibration] top_rail_zero = 1607;\r\n`[c"'
-              delay: 12.264µs
-              jitterMax: 1.226µs
-            - data: '"alibration] top_rail_spread = 19.70;\r\n`[calibration] bottom_rail_zero = 1630;\r\n`[calibration] bottom_rail_spread = 19.53;\r\n`[cal"'
-              delay: 1.203373ms
-              jitterMax: 120.337µs
-            - data: '"ibration] dac_0_zero = 1627;\r\n`[calibration] dac_0_spread = 19.67;\r\n`[calibration] dac_1_zero = 1637;\r\n`[calibration] dac_1_spre"'
-              delay: 9.311µs
-              jitterMax: 931ns
-            - data: '"ad = 19.50;\r\n`[calibration] adc_0_zero = 9.08;\r\n`[calibration] adc_0_spread = 18.14;\r\n`[calibration] adc_1_zero = 9.09;\r\n`[calibration] adc_1_spread = 18.15;\r\n`[calibration] adc_2_zero = 9.06;\r\n`[calibration] adc_2_spread = 18.12;\r\n`[calibration] adc_3_zero = 9.05;\r\n`[calibration] adc_3_spread = 18.10;\r\n`[calibration] adc_4_zero = 0.00;\r\n`[calibration] adc_4_spread = 4.94;\r\n`[calibration] adc_7_zero = 9.10;\r\n`[calibration] adc_7_spread = "'
-              delay: 1.018875ms
-              jitterMax: 101.887µs
-            - data: '"18.18;\r\n`[calibration] probe_max = 4060;\r\n`[calibration] probe_min = 26;\r\n`[calibration] probe_switch_threshold = 0.50;\r\n`[calibration] measure_mode_output_voltage = 3.30;\r\n`[calibration] probe_current_zero = 2.41;\r\n\x1b[38;5;33m\n`[logo_pads] top_guy = uart_t"'
-              delay: 462.332µs
-              jitterMax: 46.233µs
-            - data: '"x;\r\n`[logo_pads] bottom_guy = uart_rx;\r\n`[logo_pads] building_pad_top = off;\r\n`[logo_pads] building_pad_bottom = off;\r\n\x1b[38;5;99m\n`[display] lines_wires = wires;\r\n`[display] menu_brightness = -10;\r\n`[display] led_brightness = 10;\r\n`[display] rail_brightness = 55;\r\n`[display] special_net_brightness = 20;\r\n`[display] net_color_mode = rainbow;\r\n`[display] dump_leds = ;\r\n`[display] dum"'
-              delay: 764.77µs
-              jitterMax: 76.477µs
-            - data: '"p_format = image;\r\n\x1b[38;5;200m\n`[gpio] direction = 1,1,1,0,1,1,1,1,"'
-              delay: 2.783µs
-              jitterMax: 278ns
-            - data: '"0,1;"'
-              delay: 209.925µs
-              jitterMax: 20.992µs
-            - data: '"\r\n`[gpio] pulls = 0,0,0,0,0,0,0,0,2,2;\r\n`[gpio] uart_tx_function = uart_tx;\r\n`[gpio] uart_rx_function = uart_rx;\r\n\x1b[38;5;196m\n`[serial_1] function "'
-              delay: 97.801µs
-              jitterMax: 9.78µs
-            - data: '"= passthrough;\r\n`[serial_1] baud_rate = 115200;\r\n`[serial_1] print_passthrough = false;\r\n`[serial_1] connect_on_boot = false;\r\n`"'
-              delay: 218.284µs
-              jitterMax: 21.828µs
-            - data: '"[serial_1] lock_connection = false;\r\n`[serial_1] autoconnect_flashing = true;\r\n`[serial_1] async_passthrough = true;\r\n\x1b[38;5;214"'
-              delay: 74.747µs
-              jitterMax: 7.474µs
-            - data: '"m\n`[serial_2] function = off;\r\n`[serial_2] baud_rate = 115200;\r\n`[serial_2] print_passthrough = false;\r\n`[serial_2] connect_on_b"'
-              delay: 139.673µs
-              jitterMax: 13.967µs
-            - data: '"oot = false;\r\n`[serial_2] lock_connection = false;\r\n`[serial_2] autoconnect_flashing = false;\r\n"'
-              delay: 419.767µs
-              jitterMax: 41.976µs
-            - data: '"\x1b[38;5;154m\n`[top_oled] enabled = true;\r\n`[top_oled] i2c_address = 0x3C;\r\n`[top_oled] width = 128;\r\n`[top_oled] height = 32;\r\n`["'
-              delay: 267.667µs
-              jitterMax: 26.766µs
-            - data: '"top_oled] sda_pin = 26;\r\n`[top_oled] scl_pin = "'
-              delay: 1.15µs
-              jitterMax: 115ns
-            - data: '"27;\r\n`[top_oled] gpio_sda = "'
-              delay: 61.801µs
-              jitterMax: 6.18µs
-            - data: '"GP_7;\r\n`[top_oled] gpio_scl = GP_8;\r\n`[top_oled] sda_row = D2;\r\n`[top_oled] scl_row = D3;\r\n`[top_oled] connect_on_boot = false;\r"'
-              delay: 650.43µs
-              jitterMax: 65.043µs
-            - data: '"\n`[top_oled] lock_connection = false;\r\n`[top_oled] show_in_terminal = false;\r\n`[top_oled] font = jokerman;\r\n\x1b[38;5;46m\nEND\n\r\r\n\n\n\r\n"'
-              delay: 439.395µs
-              jitterMax: 43.939µs
-        - chunks:
-            - data: '"\r\n"'
-              delay: 2.413474ms
-              jitterMax: 241.347µs
-            - data: '"\n\rcopy / edit / paste any of these lines \n\rinto the main menu to change a setting\n\r\r\nJumperless Config:\n\r\r\n\x1b[38;5;196m\n`[config]"'
-              delay: 1.026089889s
-              jitterMax: 102.608988ms
-            - data: '" firmware_version = 5.3.1.0;\r\n\n`[hardware] generation = 5;\r\n"'
-              delay: 80.105µs
-              jitterMax: 8.01µs
-            - data: '"`[hardware] revision = 5;\r\n`[hardware] probe_revision = 5;\r\n"'
-              delay: 66.756µs
-              jitterMax: 6.675µs
-            - data: '"\x1b[38;5;214m"'
-              delay: 263.68µs
-              jitterMax: 26.368µs
-            - data: '"\n`[dacs] top_rail = "'
-              delay: 178.475µs
-              jitterMax: 17.847µs
-            - data: '"0.00;\r\n`[dacs] bottom_rail = 0.00;\r\n`[dacs] dac_0 = 3.33;\r\n`[dacs] dac_1 = 0.00;\r\n`[dacs] set_dacs_on_boot = false;\r\n`[dacs] set_rails_on_boot = true;\r\n`[dacs] probe_power_dac = 0;\r\n`[dacs] limit_max = 8.00;\r\n`[dacs] limit_min = -8.00;\r\n\x1b[38;5;154m\n`[debug"'
-              delay: 784.916µs
-              jitterMax: 78.491µs
-            - data: '"] file_parsing = false;\r\n`[debug] net_manager = false;\r\n`[debug] nets_to_chips = false;\r\n`[debug] nets_to_chips_alt = false;\r\n`["'
-              delay: 191.678µs
-              jitterMax: 19.167µs
-            - data: '"debug] leds = false;\r\n`[debug] logic_analyzer = true;\r\n`[debug] arduino = 0;\r\n\x1b[38;5;46m\n`[routing] stack_paths = 2;\r\n`[routing]"'
-              delay: 79.151µs
-              jitterMax: 7.915µs
-            - data: '" stack_rails = 3;\r\n`[routing] stack_dacs = 0;\r\n`[routing] "'
-              delay: 321.968µs
-              jitterMax: 32.196µs
-            - data: '"rail_priority = 1;\r\n"'
-              delay: 35.962µs
-              jitterMax: 3.596µs
-            - data: '"\x1b[38;5;50m\n`[calibration] top_rail_zero = 1607;\r\n`[calibration] top_rail_spread = 19.70;\r\n"'
-              delay: 192.267µs
-              jitterMax: 19.226µs
-            - data: '"`[calibration] bottom_rail_zero = 1630;\r\n`[calibration] bottom_rail_spread = 19.53"'
-              delay: 195.016µs
-              jitterMax: 19.501µs
-            - data: '";\r\n`[calibration] dac_0_zero = 1627;\r\n`[calibration] "'
-              delay: 73.15µs
-              jitterMax: 7.315µs
-            - data: '"dac_0_spread = 19."'
-              delay: 60.55µs
-              jitterMax: 6.055µs
-            - data: '"67"'
-              delay: 213.792µs
-              jitterMax: 21.379µs
-            - data: '";"'
-              delay: 31.472µs
-              jitterMax: 3.147µs
-            - data: '"\r\n`[calibration] "'
-              delay: 69.416µs
-              jitterMax: 6.941µs
-            - data: '"dac_1_zero = 1637;\r\n`[calibration] dac_1_spread = 19.50;\r\n`[calibration] adc_0_zero = 9.08;\r\n`[calibration] adc_0_spread = 18.14"'
-              delay: 1.252783ms
-              jitterMax: 125.278µs
-            - data: '";\r\n`[calibration] adc_1_zero = 9.09;\r\n`[calibration] adc_1_spread = 18.15;\r\n`[calibration] adc_2_zero = 9.06;\r\n`[calibration] ad"'
-              delay: 2.268µs
-              jitterMax: 226ns
-            - data: '"c_2_spread = 18.12;\r\n`[calibration] adc_3_zero = 9.05;\r\n`[calibration] adc_3_spread = 18.10;\r\n`[calibration] adc_4_zero = 0.00;\r"'
-              delay: 57.923µs
-              jitterMax: 5.792µs
-            - data: '"\n`[calibration] adc_4_spread = 4.94;\r\n`[calibration] adc_7_zero = 9.10;\r\n`[calibration] adc_7_spread = 18.18;\r\n`[calibration] pr"'
-              delay: 218.779µs
-              jitterMax: 21.877µs
-            - data: '"obe_max = 4060;\r\n`[calibration] probe_min = 26;\r\n`[calibration] probe_switch_threshold = 0.50;\r\n`[calibration] measure_mode_outp"'
-              delay: 272.957µs
-              jitterMax: 27.295µs
-            - data: '"ut_voltage = 3.30;\r\n`[calibration] probe_current_zero = 2.41;\r\n\x1b[38;5;33m\n`[logo_pads] top_guy = uart_tx;\r\n`[logo_pads] bottom_g"'
-              delay: 254.732µs
-              jitterMax: 25.473µs
-            - data: '"uy = uart_rx;\r\n`[logo_pads] building_pad_top = off;\r\n`[logo_pads] building_pad_bottom = off;\r\n\x1b[38;5;99m\n`[display] lines_wires "'
-              delay: 245.791µs
-              jitterMax: 24.579µs
-            - data: '"= wires;\r\n`[display] menu_brightness = -10;\r\n`[display] led_brightness = 10;\r\n`[display] rail_brightness = 55;\r\n`[display] speci"'
-              delay: 4.591µs
-              jitterMax: 459ns
-            - data: '"al_net_brightness = 20;\r\n`[display] net_color_mode = rainbow;\r\n`[display] dump_leds = ;\r\n`[display] dump_format = image;\r\n\x1b[38;5"'
-              delay: 277.636µs
-              jitterMax: 27.763µs
-            - data: '";200m\n`[gpio] direction = 1,1,1,0,1,1,1,1,0,1;\r\n`[gpio] pulls = 0,0,0,0,0,0,0,"'
-              delay: 303.278µs
-              jitterMax: 30.327µs
-            - data: '"0,2,2;\r\n`[gpio] uart_tx_function = uart_tx;\r\n`[gpio] uart_rx_function = uart_rx;\r\n\x1b[38;5;196m\n`[serial_1] function = "'
-              delay: 331.466µs
-              jitterMax: 33.146µs
-            - data: '"passthrough;\r\n`[serial_1] baud_rate = "'
-              delay: 131.55µs
-              jitterMax: 13.155µs
-            - data: '"115200;\r\n`[serial_1] print_passthrough = false"'
-              delay: 158.599µs
-              jitterMax: 15.859µs
-            - data: '";\r\n`[serial_1] connect_on_boot = "'
-              delay: 232.365µs
-              jitterMax: 23.236µs
-            - data: '"false;\r\n`[serial_1] "'
-              delay: 203.984µs
-              jitterMax: 20.398µs
-            - data: '"lock_connection = false;\r\n`[serial_1] "'
-              delay: 197.288µs
-              jitterMax: 19.728µs
-            - data: '"autoconnect_flashing = true;\r\n`[serial_1] "'
-              delay: 258.295µs
-              jitterMax: 25.829µs
-            - data: '"async_passthrough = true;\r\n"'
-              delay: 163.507µs
-              jitterMax: 16.35µs
-            - data: '"\x1b[38;5;214m"'
-              delay: 260.29µs
-              jitterMax: 26.029µs
-            - data: '"\n`[serial_2] function = off;\r\n`[serial_2] baud_rate = 115200;\r\n`[serial_2] print_passthrough = false;\r\n`[serial_2] connect_on_bo"'
-              delay: 70.473µs
-              jitterMax: 7.047µs
-            - data: '"ot = false;\r\n`[serial_2] lock_connection = false;\r\n`[serial_2] autoconnect_flashing = false;\r\n"'
-              delay: 146.675µs
-              jitterMax: 14.667µs
-            - data: '"\x1b[38;5;154m"'
-              delay: 208.858µs
-              jitterMax: 20.885µs
-            - data: '"\n`[top_oled] "'
-              delay: 417.332µs
-              jitterMax: 41.733µs
-            - data: '"enabled = true;\r\n`[top_oled] i2c_address = 0x3C;"'
-              delay: 1.514µs
-              jitterMax: 151ns
-            - data: '"\r\n`[top_oled] width = 128;\r\n`[top_oled] height = 32;\r\n`[top_oled] sda_pin = 26;\r\n`[top_oled] scl_pin = 27;\r\n`[top_oled] gpio_sda"'
-              delay: 97.694µs
-              jitterMax: 9.769µs
-            - data: '" = GP_7;\r\n`[top_oled] gpio_scl = "'
-              delay: 81.39µs
-              jitterMax: 8.139µs
-            - data: '"GP_8;\r\n`[top_oled] sda_row = "'
-              delay: 250.2µs
-              jitterMax: 25.02µs
-            - data: '"D2;\r\n`[top_oled] scl_row = D3;\r\n`[top_oled] "'
-              delay: 228.252µs
-              jitterMax: 22.825µs
-            - data: '"connect_on_boot = false"'
-              delay: 1.171µs
-              jitterMax: 117ns
-            - data: '";\r\n`[top_oled] lock_connection = "'
-              delay: 39.735µs
-              jitterMax: 3.973µs
-            - data: '"false;\r\n`[top_oled] show_in_terminal = false;\r\n`[top_oled] font = jokerman;\r\n\x1b[38;5;46m\nEND\n\r\r\n\n\n\r\n"'
-              delay: 170.688µs
-              jitterMax: 17.068µs
-    - request: '?'
-      responses:
-        - chunks:
-            - data: '"Jumperless firmware version: 5.3.1.0\r\n"'
-              delay: 95.857072ms
-              jitterMax: 9.585707ms
-        - chunks:
-            - data: '"Jumperless firmware version: 5.3.1.0\r\n"'
-              delay: 96.732754ms
-              jitterMax: 9.673275ms
     - request: '>dac_get(0)'
       responses:
         - chunks:
             - data: '"Python> "'
-              delay: 1.197581ms
-              jitterMax: 119.758µs
+              delay: 9.19803ms
+              jitterMax: 919.803µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 531.469µs
-              jitterMax: 53.146µs
+              delay: 542.797µs
+              jitterMax: 54.279µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 508.478µs
-              jitterMax: 50.847µs
+              delay: 528.308µs
+              jitterMax: 52.83µs
             - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 438.086µs
-              jitterMax: 43.808µs
+              delay: 469.145µs
+              jitterMax: 46.914µs
             - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
-              delay: 465.4µs
-              jitterMax: 46.54µs
+              delay: 478.208µs
+              jitterMax: 47.82µs
             - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 439.933µs
-              jitterMax: 43.993µs
+              delay: 466.503µs
+              jitterMax: 46.65µs
             - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
-              delay: 426.261µs
-              jitterMax: 42.626µs
+              delay: 469.789µs
+              jitterMax: 46.978µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 571.096µs
-              jitterMax: 57.109µs
-            - data: '"\rPython> "'
-              delay: 236.385µs
-              jitterMax: 23.638µs
-            - data: '"\x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 77.219µs
-              jitterMax: 7.721µs
+              delay: 275.493µs
+              jitterMax: 27.549µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
+              delay: 318.862µs
+              jitterMax: 31.886µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m0\x1b[0m"'
-              delay: 242.882µs
-              jitterMax: 24.288µs
-            - data: '"\rPython> "'
-              delay: 122.759µs
-              jitterMax: 12.275µs
-            - data: '"\x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m0\x1b[38;5;255m)\x1b[0m"'
-              delay: 430.765µs
-              jitterMax: 43.076µs
-            - data: '"\r\n"'
-              delay: 125.407µs
-              jitterMax: 12.54µs
+              delay: 419.32µs
+              jitterMax: 41.932µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m0\x1b[38;5;255m)\x1b[0m\r\n"'
+              delay: 312.79µs
+              jitterMax: 31.279µs
             - data: '"3.33"'
-              delay: 2.156801ms
-              jitterMax: 215.68µs
+              delay: 19.077483ms
+              jitterMax: 1.907748ms
             - data: '"\r\n"'
-              delay: 20.68µs
-              jitterMax: 2.068µs
+              delay: 65.304µs
+              jitterMax: 6.53µs
         - chunks:
             - data: '"Python> "'
-              delay: 14.742117ms
-              jitterMax: 1.474211ms
+              delay: 1.377608ms
+              jitterMax: 137.76µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 228.901µs
-              jitterMax: 22.89µs
+              delay: 834.362µs
+              jitterMax: 83.436µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 449.616µs
-              jitterMax: 44.961µs
+              delay: 370.821µs
+              jitterMax: 37.082µs
             - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 435.425µs
-              jitterMax: 43.542µs
+              delay: 450.428µs
+              jitterMax: 45.042µs
             - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
-              delay: 490.023µs
-              jitterMax: 49.002µs
+              delay: 479.774µs
+              jitterMax: 47.977µs
             - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 618.015µs
-              jitterMax: 61.801µs
+              delay: 714.572µs
+              jitterMax: 71.457µs
             - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
-              delay: 302.916µs
-              jitterMax: 30.291µs
-            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 664.965µs
-              jitterMax: 66.496µs
-            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m0\x1b[0m"'
-              delay: 340.477µs
-              jitterMax: 34.047µs
+              delay: 289.632µs
+              jitterMax: 28.963µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
+              delay: 342.577µs
+              jitterMax: 34.257µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
+              delay: 509.413µs
+              jitterMax: 50.941µs
+            - data: '"\rPython> \x1b[38;5;207mda"'
+              delay: 1.232µs
+              jitterMax: 123ns
+            - data: '"c_get"'
+              delay: 101.292µs
+              jitterMax: 10.129µs
+            - data: '"\x1b[38;5;255m("'
+              delay: 158.947µs
+              jitterMax: 15.894µs
+            - data: '"\x1b[38;5;199m0\x1b[0m"'
+              delay: 128.986µs
+              jitterMax: 12.898µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m0\x1b[38;5;255m)\x1b[0m\r\n"'
-              delay: 1.095156ms
-              jitterMax: 109.515µs
-            - data: '"3.33"'
-              delay: 1.557779ms
-              jitterMax: 155.777µs
-            - data: '"\r\n"'
-              delay: 737ns
-              jitterMax: 73ns
+              delay: 298.31µs
+              jitterMax: 29.831µs
+            - data: '"3.33\r\n"'
+              delay: 2.28666ms
+              jitterMax: 228.666µs
     - request: '>dac_get(1)'
       responses:
         - chunks:
             - data: '"Python> "'
-              delay: 12.144527ms
-              jitterMax: 1.214452ms
+              delay: 1.003349ms
+              jitterMax: 100.334µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 392.506µs
-              jitterMax: 39.25µs
+              delay: 865.013µs
+              jitterMax: 86.501µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 285.209µs
-              jitterMax: 28.52µs
+              delay: 410.277µs
+              jitterMax: 41.027µs
             - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 623.354µs
-              jitterMax: 62.335µs
+              delay: 624.979µs
+              jitterMax: 62.497µs
             - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
-              delay: 402.217µs
-              jitterMax: 40.221µs
+              delay: 297.818µs
+              jitterMax: 29.781µs
             - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 343.488µs
-              jitterMax: 34.348µs
+              delay: 517.537µs
+              jitterMax: 51.753µs
             - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
-              delay: 461.795µs
-              jitterMax: 46.179µs
+              delay: 434.203µs
+              jitterMax: 43.42µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 363.458µs
-              jitterMax: 36.345µs
+              delay: 373.778µs
+              jitterMax: 37.377µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 291.677µs
-              jitterMax: 29.167µs
+              delay: 305.097µs
+              jitterMax: 30.509µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m1\x1b[0m"'
-              delay: 378.04µs
-              jitterMax: 37.804µs
+              delay: 303.782µs
+              jitterMax: 30.378µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m1\x1b[38;5;255m)\x1b[0m\r\n"'
-              delay: 453.165µs
-              jitterMax: 45.316µs
-            - data: '"0.0"'
-              delay: 2.211301ms
-              jitterMax: 221.13µs
-            - data: '"\r\n"'
-              delay: 201.817µs
-              jitterMax: 20.181µs
+              delay: 496.857µs
+              jitterMax: 49.685µs
+            - data: '"0"'
+              delay: 2.162822ms
+              jitterMax: 216.282µs
+            - data: '".0\r\n"'
+              delay: 36.664µs
+              jitterMax: 3.666µs
         - chunks:
             - data: '"Python> "'
-              delay: 2.156011ms
-              jitterMax: 215.601µs
+              delay: 2.050455ms
+              jitterMax: 205.045µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 526.646µs
-              jitterMax: 52.664µs
-            - data: '"\rPython> \x1b[38;5;255mda\x1b[0m\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 1.397846ms
-              jitterMax: 139.784µs
+              delay: 824.052µs
+              jitterMax: 82.405µs
+            - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
+              delay: 472.744µs
+              jitterMax: 47.274µs
+            - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
+              delay: 410.56µs
+              jitterMax: 41.056µs
             - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
-              delay: 461.282µs
-              jitterMax: 46.128µs
+              delay: 547.707µs
+              jitterMax: 54.77µs
             - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 635.505µs
-              jitterMax: 63.55µs
-            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 1.329227ms
-              jitterMax: 132.922µs
+              delay: 400.82µs
+              jitterMax: 40.082µs
+            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
+              delay: 534.525µs
+              jitterMax: 53.452µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
+              delay: 247.317µs
+              jitterMax: 24.731µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 274.427µs
-              jitterMax: 27.442µs
+              delay: 319.315µs
+              jitterMax: 31.931µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m1\x1b[0m"'
-              delay: 768.227µs
-              jitterMax: 76.822µs
-            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m1\x1b[38;5;255m)\x1b[0m"'
-              delay: 4.068555ms
-              jitterMax: 406.855µs
-            - data: '"\r\n0.0"'
-              delay: 10.595953ms
-              jitterMax: 1.059595ms
-            - data: '"\r"'
-              delay: 1.694µs
-              jitterMax: 169ns
-            - data: '"\n"'
-              delay: 86.42µs
-              jitterMax: 8.642µs
+              delay: 523.492µs
+              jitterMax: 52.349µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m1\x1b[38;5;255m)\x1b[0m\r\n"'
+              delay: 277.817µs
+              jitterMax: 27.781µs
+            - data: '"0.0"'
+              delay: 2.237668ms
+              jitterMax: 223.766µs
+            - data: '"\r\n"'
+              delay: 1.833µs
+              jitterMax: 183ns
     - request: '>dac_get(2)'
       responses:
         - chunks:
             - data: '"Python> "'
-              delay: 8.457617ms
-              jitterMax: 845.761µs
+              delay: 1.172425ms
+              jitterMax: 117.242µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 29.24µs
-              jitterMax: 2.924µs
+              delay: 542.301µs
+              jitterMax: 54.23µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 675.311µs
-              jitterMax: 67.531µs
-            - data: '"\rPython> "'
-              delay: 134.515µs
-              jitterMax: 13.451µs
-            - data: '"\x1b[38;5;255mdac\x1b[0m"'
-              delay: 108.093µs
-              jitterMax: 10.809µs
-            - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m\rPython> "'
-              delay: 731.239µs
-              jitterMax: 73.123µs
-            - data: '"\x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 398.479µs
-              jitterMax: 39.847µs
-            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 1.092854ms
-              jitterMax: 109.285µs
+              delay: 657.214µs
+              jitterMax: 65.721µs
+            - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
+              delay: 432.682µs
+              jitterMax: 43.268µs
+            - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
+              delay: 486.647µs
+              jitterMax: 48.664µs
+            - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
+              delay: 507.804µs
+              jitterMax: 50.78µs
+            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
+              delay: 530.23µs
+              jitterMax: 53.023µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
+              delay: 349.573µs
+              jitterMax: 34.957µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 299.142µs
-              jitterMax: 29.914µs
-            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m2\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m2\x1b[38;5;255m)\x1b[0m\r\n"'
-              delay: 1.158114ms
-              jitterMax: 115.811µs
-            - data: '"0"'
-              delay: 2.88655ms
-              jitterMax: 288.655µs
-            - data: '".0\r\n"'
-              delay: 201.723µs
-              jitterMax: 20.172µs
+              delay: 525.662µs
+              jitterMax: 52.566µs
+            - data: '"\rPython> "'
+              delay: 278.837µs
+              jitterMax: 27.883µs
+            - data: '"\x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m2\x1b[0m"'
+              delay: 248.518µs
+              jitterMax: 24.851µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m2\x1b[38;5;255m)\x1b[0m\r\n"'
+              delay: 368.504µs
+              jitterMax: 36.85µs
+            - data: '"0.0\r\n"'
+              delay: 1.927456ms
+              jitterMax: 192.745µs
         - chunks:
             - data: '"Python> "'
-              delay: 5.01159ms
-              jitterMax: 501.159µs
+              delay: 1.863469ms
+              jitterMax: 186.346µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 1.164055ms
-              jitterMax: 116.405µs
+              delay: 783.338µs
+              jitterMax: 78.333µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 1.096µs
-              jitterMax: 109ns
+              delay: 435.683µs
+              jitterMax: 43.568µs
             - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 499.807µs
-              jitterMax: 49.98µs
+              delay: 448.004µs
+              jitterMax: 44.8µs
             - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
-              delay: 384.049µs
-              jitterMax: 38.404µs
+              delay: 557.249µs
+              jitterMax: 55.724µs
             - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 377.566µs
-              jitterMax: 37.756µs
-            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 1.14101ms
-              jitterMax: 114.101µs
+              delay: 514.813µs
+              jitterMax: 51.481µs
+            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
+              delay: 446.132µs
+              jitterMax: 44.613µs
+            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
+              delay: 310.996µs
+              jitterMax: 31.099µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 428.73µs
-              jitterMax: 42.873µs
+              delay: 420.429µs
+              jitterMax: 42.042µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m2\x1b[0m"'
-              delay: 292.723µs
-              jitterMax: 29.272µs
+              delay: 221.761µs
+              jitterMax: 22.176µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m2\x1b[38;5;255m)\x1b[0m\r\n"'
-              delay: 492.158µs
-              jitterMax: 49.215µs
+              delay: 384.709µs
+              jitterMax: 38.47µs
             - data: '"0"'
-              delay: 2.089852ms
-              jitterMax: 208.985µs
-            - data: '".0\r\n"'
-              delay: 172.064µs
-              jitterMax: 17.206µs
+              delay: 2.266823ms
+              jitterMax: 226.682µs
+            - data: '".0"'
+              delay: 1.103µs
+              jitterMax: 110ns
+            - data: '"\r\n"'
+              delay: 109.768µs
+              jitterMax: 10.976µs
     - request: '>dac_get(3)'
       responses:
         - chunks:
             - data: '"Python> "'
-              delay: 2.26826ms
-              jitterMax: 226.826µs
+              delay: 1.852365ms
+              jitterMax: 185.236µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 694.789µs
-              jitterMax: 69.478µs
+              delay: 684.544µs
+              jitterMax: 68.454µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 597.336µs
-              jitterMax: 59.733µs
+              delay: 394.129µs
+              jitterMax: 39.412µs
             - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 590.112µs
-              jitterMax: 59.011µs
-            - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 921.746µs
-              jitterMax: 92.174µs
-            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 841.541µs
-              jitterMax: 84.154µs
-            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 222.384µs
-              jitterMax: 22.238µs
+              delay: 617.473µs
+              jitterMax: 61.747µs
+            - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m\rPython> "'
+              delay: 648.112µs
+              jitterMax: 64.811µs
+            - data: '"\x1b[38;5;255mdac_g\x1b[0m"'
+              delay: 389.899µs
+              jitterMax: 38.989µs
+            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m\rPython> "'
+              delay: 537.628µs
+              jitterMax: 53.762µs
+            - data: '"\x1b[38;5;"'
+              delay: 349.195µs
+              jitterMax: 34.919µs
+            - data: '"207"'
+              delay: 34.25µs
+              jitterMax: 3.425µs
+            - data: '"mdac_get"'
+              delay: 147.364µs
+              jitterMax: 14.736µs
+            - data: '"\x1b[0m\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
+              delay: 534.456µs
+              jitterMax: 53.445µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m3\x1b[0m"'
-              delay: 427.19µs
-              jitterMax: 42.719µs
+              delay: 242.873µs
+              jitterMax: 24.287µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m3\x1b[38;5;255m)\x1b[0m\r\n"'
-              delay: 222.913µs
-              jitterMax: 22.291µs
-            - data: '"0.0"'
-              delay: 2.548322ms
-              jitterMax: 254.832µs
+              delay: 192.754µs
+              jitterMax: 19.275µs
+            - data: '"0"'
+              delay: 2.115599ms
+              jitterMax: 211.559µs
+            - data: '".0"'
+              delay: 1.77µs
+              jitterMax: 177ns
             - data: '"\r\n"'
-              delay: 18.475µs
-              jitterMax: 1.847µs
+              delay: 62.429µs
+              jitterMax: 6.242µs
         - chunks:
             - data: '"Python> "'
-              delay: 2.65508ms
-              jitterMax: 265.508µs
+              delay: 2.108601ms
+              jitterMax: 210.86µs
             - data: '"\rPython> \x1b[38;5;255md\x1b[0m"'
-              delay: 854.35µs
-              jitterMax: 85.435µs
+              delay: 720.238µs
+              jitterMax: 72.023µs
             - data: '"\rPython> \x1b[38;5;255mda\x1b[0m"'
-              delay: 336.494µs
-              jitterMax: 33.649µs
+              delay: 497.724µs
+              jitterMax: 49.772µs
             - data: '"\rPython> \x1b[38;5;255mdac\x1b[0m"'
-              delay: 542.264µs
-              jitterMax: 54.226µs
-            - data: '"\rPython> \x1b[38;5;255mdac_\x1b[0m"'
-              delay: 401.035µs
-              jitterMax: 40.103µs
+              delay: 625.766µs
+              jitterMax: 62.576µs
+            - data: '"\rPython> "'
+              delay: 31.584µs
+              jitterMax: 3.158µs
+            - data: '"\x1b[38;5;255mdac_\x1b[0m"'
+              delay: 340.789µs
+              jitterMax: 34.078µs
             - data: '"\rPython> \x1b[38;5;255mdac_g\x1b[0m"'
-              delay: 342.278µs
-              jitterMax: 34.227µs
-            - data: '"\rPython> \x1b[38;5;255mdac_ge\x1b[0m"'
-              delay: 458.398µs
-              jitterMax: 45.839µs
+              delay: 619.409µs
+              jitterMax: 61.94µs
+            - data: '"\rPython> "'
+              delay: 47.17µs
+              jitterMax: 4.717µs
+            - data: '"\x1b[38;5;255mdac_ge\x1b[0m"'
+              delay: 347.329µs
+              jitterMax: 34.732µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[0m"'
-              delay: 299.855µs
-              jitterMax: 29.985µs
-            - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[0m"'
-              delay: 398.868µs
-              jitterMax: 39.886µs
+              delay: 545.48µs
+              jitterMax: 54.548µs
+            - data: '"\rPython> \x1b[38;5;207m"'
+              delay: 1.442µs
+              jitterMax: 144ns
+            - data: '"dac_get"'
+              delay: 78.051µs
+              jitterMax: 7.805µs
+            - data: '"\x1b[38;5;255m("'
+              delay: 51.879µs
+              jitterMax: 5.187µs
+            - data: '"\x1b[0m"'
+              delay: 168.465µs
+              jitterMax: 16.846µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m3\x1b[0m"'
-              delay: 324.028µs
-              jitterMax: 32.402µs
+              delay: 304.96µs
+              jitterMax: 30.496µs
             - data: '"\rPython> \x1b[38;5;207mdac_get\x1b[38;5;255m(\x1b[38;5;199m3\x1b[38;5;255m)\x1b[0m\r\n"'
-              delay: 990.507µs
-              jitterMax: 99.05µs
-            - data: '"0"'
-              delay: 1.762193ms
-              jitterMax: 176.219µs
-            - data: '".0"'
-              delay: 2.392µs
+              delay: 451.45µs
+              jitterMax: 45.145µs
+            - data: '"0.0\r\n"'
+              delay: 2.227852ms
+              jitterMax: 222.785µs
+    - request: '>print_nets()'
+      responses:
+        - chunks:
+            - data: '"Python> "'
+              delay: 1.778047ms
+              jitterMax: 177.804µs
+            - data: '"\rPython> \x1b[38;5;255mp\x1b[0m"'
+              delay: 726.918µs
+              jitterMax: 72.691µs
+            - data: '"\rPython> \x1b[38;5;255mpr\x1b[0m"'
+              delay: 497.35µs
+              jitterMax: 49.735µs
+            - data: '"\rPython> \x1b[38;5;255mpri\x1b[0m"'
+              delay: 469.064µs
+              jitterMax: 46.906µs
+            - data: '"\rPython> \x1b[38;5;255mprin\x1b[0m"'
+              delay: 458.655µs
+              jitterMax: 45.865µs
+            - data: '"\rPython> \x1b[38;5;214mprint\x1b[0m"'
+              delay: 303.618µs
+              jitterMax: 30.361µs
+            - data: '"\rPython> \x1b[38;5;255mprint_\x1b[0m"'
+              delay: 672.078µs
+              jitterMax: 67.207µs
+            - data: '"\rPython> "'
+              delay: 55.68µs
+              jitterMax: 5.568µs
+            - data: '"\x1b[38;5;255mprint_n\x1b[0m\rPython> \x1b[38;5;255mprint_ne\x1b[0m"'
+              delay: 16.747373ms
+              jitterMax: 1.674737ms
+            - data: '"\rPython> \x1b[38;5;255mprint_net\x1b[0m\rPython> \x1b[38;5;207mprint_nets\x1b[0m"'
+              delay: 24.463µs
+              jitterMax: 2.446µs
+            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m(\x1b[0m\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m()\x1b[0m"'
+              delay: 2.394µs
               jitterMax: 239ns
             - data: '"\r\n"'
-              delay: 129.519µs
-              jitterMax: 12.951µs
+              delay: 228.906µs
+              jitterMax: 22.89µs
+            - data: '"\n\rIndex\tName\t\tVoltage\t    Nodes\t\n\r\x1b[38;5;48m1\t GND\t\t \x1b[38;5;48m0 V         GND       \t    \r\n\x1b[38;5;197m2\t Top Rail\t \x1b[38;5;197m0.00 V      TOP_R     \t    \r\n\x1b[38;5;199m3\t Bottom Rail\t \x1b[38;5;199m0.00 V      BOT_R     \t    \r\n\x1b[38;5;222m4\t DAC 0\t\t \x1b[38;5;222m"'
+              delay: 56.224µs
+              jitterMax: 5.622µs
+            - data: '"3.33 V      DAC_0,BUF_IN\t    \r\n\x1b[38;5;116m5\t DAC 1\t\t \x1b[38;5;116m0.00 V      DAC_1     \t    \r\n\x1b[0m\n\rIndex\tName\t\tColor\t    Nodes  "'
+              delay: 1.5µs
+              jitterMax: 150ns
+            - data: '"         GPIO \r\n\x1b[38;5;176m6\t Net 6\t\t \b\b* \x1b[38;5;160mred    - h  GP_7,D2   \t    input - high\r\n\x1b[38;5;213m7\t Net 7\t\t \b\b* \x1b[38;5;1"'
+              delay: 214.868µs
+              jitterMax: 21.486µs
+            - data: '"60mred    - h  GP_8,D3   \t    input - high\r\n\x1b[38;5;147m8\t Net 8\t\t \x1b[38;5;160mred         "'
+              delay: 55.901µs
+              jitterMax: 5.59µs
+            - data: '"UART_Rx,"'
+              delay: 252.25µs
+              jitterMax: 25.225µs
+            - data: '"D1\t    \r\n\x1b[38;5;180m9\t Net 9\t\t \x1b[38;5;160mred         UART_Tx,D0\t    \r\n\x1b[0m"'
+              delay: 2.365384ms
+              jitterMax: 236.538µs
+        - chunks:
+            - data: '"Python> "'
+              delay: 3.650859ms
+              jitterMax: 365.085µs
+            - data: '"\rPython> \x1b[38;5;255mp\x1b[0m"'
+              delay: 943.59µs
+              jitterMax: 94.359µs
+            - data: '"\rPython> \x1b[38;5;255mpr\x1b[0m"'
+              delay: 406.4µs
+              jitterMax: 40.64µs
+            - data: '"\rPython> \x1b[38;5;255mpri\x1b[0m"'
+              delay: 463.817µs
+              jitterMax: 46.381µs
+            - data: '"\rPython> \x1b[38;5;255mprin\x1b[0m"'
+              delay: 424.115µs
+              jitterMax: 42.411µs
+            - data: '"\rPython> \x1b[38;5;214mprint\x1b[0m"'
+              delay: 305.04µs
+              jitterMax: 30.504µs
+            - data: '"\rPython> \x1b[38;5;255mprint_\x1b[0m"'
+              delay: 519.12µs
+              jitterMax: 51.912µs
+            - data: '"\rPython> "'
+              delay: 60.22µs
+              jitterMax: 6.022µs
+            - data: '"\x1b[38;5;255mprint_n\x1b[0m"'
+              delay: 253.891µs
+              jitterMax: 25.389µs
+            - data: '"\rPython> \x1b[38;5;255mprint_ne\x1b[0m"'
+              delay: 591.453µs
+              jitterMax: 59.145µs
+            - data: '"\rPython> "'
+              delay: 184.721µs
+              jitterMax: 18.472µs
+            - data: '"\x1b[38;5;255mprint_net\x1b[0m"'
+              delay: 162.373µs
+              jitterMax: 16.237µs
+            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[0m"'
+              delay: 594.934µs
+              jitterMax: 59.493µs
+            - data: '"\rPython> "'
+              delay: 10.288µs
+              jitterMax: 1.028µs
+            - data: '"\x1b[38;5;207mprint_nets\x1b[38;5;255m(\x1b[0m"'
+              delay: 178.157µs
+              jitterMax: 17.815µs
+            - data: '"\rPython> \x1b[38;5;207mprint_nets\x1b[38;5;255m()\x1b[0m\r\n"'
+              delay: 438.499µs
+              jitterMax: 43.849µs
+            - data: '"\n\rIndex\tName\t\tVoltage\t    Nodes\t\n\r\x1b[38;5;48m1\t GND\t\t \x1b[38;5;48m0 V         GND       \t    \r\n\x1b[38;5;197m2\t Top Rail\t \x1b[38;5;197m0.00 V      TOP_R     \t    \r\n\x1b[38;5;199m3\t Bottom Rail\t \x1b[38;5;199m0.00 V      BOT_R     \t    \r\n\x1b[38;5;222m4\t DAC 0\t\t \x1b[38;5;222m"'
+              delay: 5.469356ms
+              jitterMax: 546.935µs
+            - data: '"3.33 V      DAC_0,BUF_IN\t    \r\n\x1b[38;5;116m5\t DAC 1\t\t \x1b[38;5;116m0.00 V      DAC_1     \t    \r\n\x1b[0m\n\rIndex\tName\t\tColor\t    Nodes  "'
+              delay: 189.478µs
+              jitterMax: 18.947µs
+            - data: '"         GPIO \r\n\x1b[38;5;176m6\t Net 6\t\t \b\b* \x1b[38;5;160mred    - h  GP_7,D2   \t    input - high\r\n\x1b[38;5;213m7\t Net 7\t\t \b\b* \x1b[38;5;1"'
+              delay: 160.427µs
+              jitterMax: 16.042µs
+            - data: '"60mred    - h  GP_8,D3   \t    input - high\r\n\x1b[38;5;147m8\t Net 8\t\t \x1b[38;5;160mred         UART_Rx,D1\t    \r\n\x1b[38;5;180m9\t "'
+              delay: 321.016µs
+              jitterMax: 32.101µs
+            - data: '"Net 9\t\t "'
+              delay: 17.303µs
+              jitterMax: 1.73µs
+            - data: '"\x1b[38;5;160mred         UART_Tx,D0\t    \r\n\x1b[0m"'
+              delay: 457.603µs
+              jitterMax: 45.76µs
+    - request: "~"
+      responses:
+        - chunks:
+            - data: '"\r\n"'
+              delay: 899.542µs
+              jitterMax: 89.954µs
+            - data: '"\n\rcopy / edit / paste any of these lines \n\rinto the main menu to change a setting\n\r\r\nJumperless Config:\n\r\r\n\x1b[38;5;196m\n`[config] firmware_version = 5.3.1.0;\r\n\n`[hardware] generation = 5;\r\n`[hardware] revision = 5;\r\n`[hardware] probe_revision = 5;\r\n\x1b[38;5;214m"'
+              delay: 1.042455911s
+              jitterMax: 104.245591ms
+            - data: '"\n`[dacs] top_rail = "'
+              delay: 14.502µs
+              jitterMax: 1.45µs
+            - data: '"0.00;\r\n`[dacs] bottom_rail = 0.00;\r\n`[dacs] dac_0 = 3.33;\r\n`[dacs] dac_1 = 0.00;\r\n`[dacs] set_dacs_on_boot = false;\r\n`[dacs] set"'
+              delay: 587.684µs
+              jitterMax: 58.768µs
+            - data: '"_rails_on_boot = true;\r\n`[dacs] probe_power_dac = 0;\r\n`[dacs] limit_max = 8.00;\r\n`[dacs] limit_min = -8.00;\r\n\x1b[38;5;154m\n`[debug"'
+              delay: 982.651µs
+              jitterMax: 98.265µs
+            - data: '"] file_parsing = false;\r\n`[debug] net_manager = false;\r\n`[debug] nets_to_chips = false;\r\n`[debug] nets_to_chips_alt = false;\r\n`["'
+              delay: 587.351µs
+              jitterMax: 58.735µs
+            - data: '"debug] leds = false;\r\n`[debug] logic_analyzer = true;\r\n`[debug] arduino = 0;\r\n\x1b[38;5;46m\n`[routing] stack_paths = 2;\r\n`[routing] stack_rails = 3;\r\n`[routing] stack_dacs = 0;\r\n`[routing] rail_priority = 1;\r\n\x1b[38;5;50m\n`[calibration] top_rail_zero = 1607;\r\n`"'
+              delay: 59.769µs
+              jitterMax: 5.976µs
+            - data: '"[calibration] top_rail_spread = 19.70;\r\n`[calibration] bottom_rail_zero = 1630;\r\n`[calibration] bottom_rail_spread = 19.53;\r\n`[c"'
+              delay: 138.599µs
+              jitterMax: 13.859µs
+            - data: '"alibration] dac_0_zero = 1627;\r\n`[calibration] dac_0_spread = 19.67;\r\n`[calibration] dac_1_zero = 1637;\r\n`[calibration] dac_1_spread = 19.50;\r\n`[calibration] adc_0_zero = 9.08;\r\n`[calibration] adc_0_spread = 18.14;\r\n`[calibration] adc_1_zero = 9.09;\r\n`[calibration] adc_1_spread = 18.15;"'
+              delay: 46.564µs
+              jitterMax: 4.656µs
+            - data: '"\r\n`[calibration] adc_2_zero = "'
+              delay: 97.901µs
+              jitterMax: 9.79µs
+            - data: '"9.06;\r\n"'
+              delay: 219.015µs
+              jitterMax: 21.901µs
+            - data: '"`[calibration] adc_2_spread = 18.12"'
+              delay: 81.212µs
+              jitterMax: 8.121µs
+            - data: '";\r\n`[calibration] adc_3_zero = 9"'
+              delay: 63.846µs
+              jitterMax: 6.384µs
+            - data: '".05;\r\n`[calibration] adc_3_spread = 18.1"'
+              delay: 39.179µs
+              jitterMax: 3.917µs
+            - data: '"0"'
+              delay: 273.441µs
+              jitterMax: 27.344µs
+            - data: '";\r\n`[calibration] adc_4_zero = 0.00;\r\n`[calibration] adc_4_spread = 4.94;\r\n`[calibration] adc_7_zero = 9.10;\r\n`[calibration] adc"'
+              delay: 261.154µs
+              jitterMax: 26.115µs
+            - data: '"_7_spread = 18.18;\r\n`[calibration] probe_max = 4060;\r\n`[calibration] probe_min = 26;\r\n`[calibration] probe_switch_threshold = 0.50"'
+              delay: 78.078µs
+              jitterMax: 7.807µs
+            - data: '";\r\n`[calibration] measure_mode_output_voltage = "'
+              delay: 118.412µs
+              jitterMax: 11.841µs
+            - data: '"3.30;\r\n"'
+              delay: 85.095µs
+              jitterMax: 8.509µs
+            - data: '"`[calibration] "'
+              delay: 14.249µs
+              jitterMax: 1.424µs
+            - data: '"probe_current_zero = 2."'
+              delay: 403.386µs
+              jitterMax: 40.338µs
+            - data: '"16;"'
+              delay: 74.313µs
+              jitterMax: 7.431µs
+            - data: '"\r\n\x1b[38;5;33m\n`[logo_pads] top_guy = uart_tx;\r\n`[logo_pads] bottom_guy = uart_rx;\r\n`[logo_pads] building_pad_top = off;\r\n`[logo_pads] buildin"'
+              delay: 53.841µs
+              jitterMax: 5.384µs
+            - data: '"g_pad_bottom = off;\r\n"'
+              delay: 160.525µs
+              jitterMax: 16.052µs
+            - data: '"\x1b[38;5;99m"'
+              delay: 731.371µs
+              jitterMax: 73.137µs
+            - data: '"\n`[display] lines_wires = wires;\r\n`[display] menu_brightness = "'
+              delay: 114.258µs
+              jitterMax: 11.425µs
+            - data: '"-10;\r\n`[display] "'
+              delay: 33.416µs
+              jitterMax: 3.341µs
+            - data: '"led_brightness = 10;\r\n`[display] "'
+              delay: 426.475µs
+              jitterMax: 42.647µs
+            - data: '"rail_brightness = 55;\r\n`[display] "'
+              delay: 13.101µs
+              jitterMax: 1.31µs
+            - data: '"special_net_brightness = 20;\r\n`[display] "'
+              delay: 176.77µs
+              jitterMax: 17.677µs
+            - data: '"net_color_mode = rainbow;\r\n`[display] dump_leds = ;\r\n`[display] dump_format = image;\r\n"'
+              delay: 205.543µs
+              jitterMax: 20.554µs
+            - data: '"\x1b[38;5;200m\n`[gpio] direction = "'
+              delay: 86.673µs
+              jitterMax: 8.667µs
+            - data: '"1,"'
+              delay: 120.802µs
+              jitterMax: 12.08µs
+            - data: '"1,1,"'
+              delay: 825.048µs
+              jitterMax: 82.504µs
+            - data: '"0,1"'
+              delay: 2.03µs
+              jitterMax: 203ns
+            - data: '",1,1,1,"'
+              delay: 81.498µs
+              jitterMax: 8.149µs
+            - data: '"0,1;\r\n`[gpio] pulls = 0,0,0,0,0,0,0,0,2,2;\r\n`[gpio] uart_tx_function = uart_tx;\r\n`[gpio] uart_rx_function = uart_rx;\r\n\x1b[38;5;196"'
+              delay: 344.035µs
+              jitterMax: 34.403µs
+            - data: '"m\n`[serial_1] function = passthrough;\r\n`[serial_1] baud_rate = 115200;\r\n`[serial_1] print_passthrough = false;\r\n`[serial_1] conn"'
+              delay: 79.434µs
+              jitterMax: 7.943µs
+            - data: '"ect_on_boot = false;\r\n`[serial_1] lock_connection = false;\r\n`[serial_1] autoconnect_flashing = true;\r\n`[serial_1] async_passthrough = true;\r\n\x1b[38;5;214m\n`[serial_2] function = off;\r\n`[serial_2] baud_rate = 115200;\r\n`[serial_2] print_passthrough = false;\r\n`"'
+              delay: 187.416µs
+              jitterMax: 18.741µs
+            - data: '"[serial_2] connect_on_boot = false;\r\n`[serial_2] lock_connection = false;\r\n`[serial_2] autoconnect_flashing = false;\r\n\x1b[38;5;154m\n`[top_oled] enabled = true;\r\n`[top_oled] i2c_address = 0x3C;\r\n`[top_oled] width = 128;\r\n`[top_oled] height = 32;\r\n`[top_oled] "'
+              delay: 338.982µs
+              jitterMax: 33.898µs
+            - data: '"sda_pin = 26;\r\n`[top_oled] scl_pin = 27;\r\n`[top_oled] gpio_sda = GP_7;\r\n`[top_oled] gpio_scl = GP_8;\r\n`[top_oled] sda_row = D2;\r"'
+              delay: 305.242µs
+              jitterMax: 30.524µs
+            - data: '"\n`[top_oled] scl_row = D3;\r\n`[top_oled] connect_on_boot = false;\r\n`[top_oled] lock_connection = false;\r\n`[top_oled] show_in_term"'
+              delay: 362.26µs
+              jitterMax: 36.226µs
+            - data: '"inal = false;\r\n`[top_oled] font = jokerman;\r\n\x1b[38;5;46m\nEND\n\r\r\n\n\n\r\n"'
+              delay: 7.47µs
+              jitterMax: 747ns
+        - chunks:
+            - data: '"\r\n"'
+              delay: 695.296µs
+              jitterMax: 69.529µs
+            - data: '"\n\rcopy / edit / paste any of these lines \n\rinto the main menu to change a setting\n\r\r\nJumperless Config:\n\r\r\n\x1b[38;5;196m\n`[config]"'
+              delay: 1.041017082s
+              jitterMax: 104.101708ms
+            - data: '" firmware_version = 5.3.1.0;\r\n\n`[hardware] generation = 5;\r\n`[hardware] revision = 5;\r\n`[hardware] probe_revision = 5;\r\n\x1b[38;5;214m\n`[dacs] top_rail = "'
+              delay: 440.896µs
+              jitterMax: 44.089µs
+            - data: '"0.00;\r\n`[dacs] bottom_rail = 0.00;\r\n`[dacs] dac_0 = 3.33;\r\n`[dacs] dac_1 = 0.00;\r\n`[dacs] set_dacs_on_boot = false;\r\n`[dacs] set"'
+              delay: 547.187µs
+              jitterMax: 54.718µs
+            - data: '"_rails_on_boot = true;\r\n`[dacs] probe_power_dac = 0;\r\n`[dacs] limit_max = 8.00;\r\n`[dacs] limit_min = -8.00;\r\n\x1b[38;5;154m\n`[debug"'
+              delay: 284.604µs
+              jitterMax: 28.46µs
+            - data: '"] file_parsing = false;\r\n`[debug] net_manager = false;\r\n`[debug] nets_to_chips = false;\r\n`[debug] nets_to_chips_alt = false;\r\n`["'
+              delay: 182.013µs
+              jitterMax: 18.201µs
+            - data: '"debug] leds = false;\r\n`[debug] logic_analyzer = true;\r\n`[debug] arduino = 0;\r\n\x1b[38;5;46m\n`[routing] stack_paths = 2;\r\n`[routing]"'
+              delay: 234.949µs
+              jitterMax: 23.494µs
+            - data: '" stack_rails = 3;\r\n`[routing] stack_dacs = 0;\r\n`[routing] rail_priority = 1;\r\n\x1b[38;5;50m\n`[calibration] top_rail_zero = 1607;\r\n`"'
+              delay: 137.241µs
+              jitterMax: 13.724µs
+            - data: '"[calibration] top_rail_spread = 19.70"'
+              delay: 109.685µs
+              jitterMax: 10.968µs
+            - data: '";\r\n`[calibration] bottom_rail_zero = 1630;\r\n"'
+              delay: 72.867µs
+              jitterMax: 7.286µs
+            - data: '"`[calibration] bottom_rail_spread = 19"'
+              delay: 180.781µs
+              jitterMax: 18.078µs
+            - data: '".53;\r\n`[calibration] dac_0_zero = 1627;\r\n`[calibration] dac_0_spread = 19.67;\r\n`[calibration] dac_1_zero = 1637;\r\n`[calibration]"'
+              delay: 271.093µs
+              jitterMax: 27.109µs
+            - data: '" dac_1_spread = 19.50;\r\n`[calibration] adc_0_zero = 9.08;\r\n`[calibration] adc_0_spread = 18.14;\r\n`[calibration] adc_1_zero = 9"'
+              delay: 47.977µs
+              jitterMax: 4.797µs
+            - data: '"."'
+              delay: 98.899µs
+              jitterMax: 9.889µs
+            - data: '"0"'
+              delay: 46.424µs
+              jitterMax: 4.642µs
+            - data: '"9;\r\n`[calibration] adc_1_spread = 18.15;\r\n`[calibration] adc_2_zero = 9.06;\r\n`[calibration] adc_2_spread = 18.12;\r\n`[calibration"'
+              delay: 996.087µs
+              jitterMax: 99.608µs
+            - data: '"] adc_3_zero = 9.05;\r\n`[calibration] adc_3_spread = 18.10;\r\n`[calibration] adc_4_zero = 0.00;\r\n`[calibration] adc_4_spread = 4.9"'
+              delay: 153.953µs
+              jitterMax: 15.395µs
+            - data: '"4;\r\n`[calibration] adc_7_zero = 9.10;\r\n`[calibration] adc_7_spread = 18.18;\r\n`[calibration] probe_max = 4060;\r\n`[calibration] probe_min = 26;\r\n`[calibration] probe_switch_threshold = 0.50;\r\n`[calibration] measure_mode_output_voltage = 3.30;\r\n`[calibration]"'
+              delay: 411.091µs
+              jitterMax: 41.109µs
+            - data: '" probe_current_zero = 2.16;\r\n\x1b[38;5;33m\n`[logo_pads] top_guy = uart_tx;\r\n`[logo_pads] bottom_guy = uart_rx;\r\n`[logo_pads] buildi"'
+              delay: 356.049µs
+              jitterMax: 35.604µs
+            - data: '"ng_pad_top = off;\r\n`[logo_pads] building_pad_bottom = off;\r\n\x1b[38;5;99m\n`[display] lines_wires = wires;\r\n`[display] menu_brightne"'
+              delay: 226.232µs
+              jitterMax: 22.623µs
+            - data: '"ss = -10;\r\n`[display] led_brightness = 10;\r\n`[display] rail_brightness = 55;\r\n`[display] special_net_brightness = 20;\r\n`[display"'
+              delay: 83.086µs
+              jitterMax: 8.308µs
+            - data: '"] net_color_mode = rainbow;\r\n`[display] dump_leds = ;\r\n`[display] dump_format = image;\r\n"'
+              delay: 173.569µs
+              jitterMax: 17.356µs
+            - data: '"\x1b[38;5;200m\n`[gpio] direction = 1,1,1,0,1,1,1,1,0"'
+              delay: 1.309µs
+              jitterMax: 130ns
+            - data: '",1;\r\n`[gpio] pulls = 0"'
+              delay: 194.252µs
+              jitterMax: 19.425µs
+            - data: '",0,0"'
+              delay: 85.993µs
+              jitterMax: 8.599µs
+            - data: '",0,0,0,"'
+              delay: 154.507µs
+              jitterMax: 15.45µs
+            - data: '"0,0,"'
+              delay: 46.609µs
+              jitterMax: 4.66µs
+            - data: '"2,2;"'
+              delay: 57.536µs
+              jitterMax: 5.753µs
+            - data: '"\r\n`[gpio] uart_tx_function = uart_tx;\r\n`[gpio] uart_rx_function = uart_rx;\r\n\x1b[38;5;196m\n`[serial_1] function = passthrough;\r\n"'
+              delay: 196.637µs
+              jitterMax: 19.663µs
+            - data: '"`[serial_1] baud_rate = 115200;\r\n`[serial_1] "'
+              delay: 132.955µs
+              jitterMax: 13.295µs
+            - data: '"print_passthrough = false;\r\n`[serial_1] connect_on_boot = false;\r\n`[serial_1] lock_connection = false;\r\n`[serial_1] autoconnect_"'
+              delay: 423.679µs
+              jitterMax: 42.367µs
+            - data: '"flashing = true;\r\n`[serial_1] async_passthrough = true;\r\n\x1b[38;5;214m\n`[serial_2] function = off;\r\n`[serial_2] baud_rate = 115200"'
+              delay: 135.085µs
+              jitterMax: 13.508µs
+            - data: '";\r\n`[serial_2] print_passthrough = false;\r\n`[serial_2] connect_on_boot = false;\r\n`[serial_2] lock_connection = false;\r\n`[serial_"'
+              delay: 354.569µs
+              jitterMax: 35.456µs
+            - data: '"2] autoconnect_flashing = false;\r\n\x1b[38;5;154m\n`[top_oled] enabled = true;\r\n`[top_oled] i2c_address = 0x3C;\r\n`[top_oled] "'
+              delay: 367.877µs
+              jitterMax: 36.787µs
+            - data: '"width = 128;\r\n`[top_oled] height = 32;\r\n`[top_oled] sda_pin = 26;\r\n`[top_oled] scl_pin = 27;\r\n`[top_oled] gpio_sda = GP_7;\r\n`[top_oled] gpio_scl = GP_8;"'
+              delay: 80.449µs
+              jitterMax: 8.044µs
+            - data: '"\r\n`[top_oled] "'
+              delay: 10.656µs
+              jitterMax: 1.065µs
+            - data: '"sda_row = "'
+              delay: 80.546µs
+              jitterMax: 8.054µs
+            - data: '"D2;"'
+              delay: 74.454µs
+              jitterMax: 7.445µs
+            - data: '"\r\n`[top_oled] "'
+              delay: 672ns
+              jitterMax: 67ns
+            - data: '"scl_row = "'
+              delay: 398.583µs
+              jitterMax: 39.858µs
+            - data: '"D3"'
+              delay: 92.28µs
+              jitterMax: 9.228µs
+            - data: '";\r\n"'
+              delay: 1.411µs
+              jitterMax: 141ns
+            - data: '"`[top_oled] "'
+              delay: 123.574µs
+              jitterMax: 12.357µs
+            - data: '"connect_on_boot = false;"'
+              delay: 862ns
+              jitterMax: 86ns
+            - data: '"\r\n`[top_oled] lock_connection = false"'
+              delay: 123.297µs
+              jitterMax: 12.329µs
+            - data: '";\r\n`[top_oled] show_in_terminal = false;\r\n`[top_oled] font = jokerman;\r\n\x1b[38;5;46m\nEND\n\r\r\n\n\n\r\n"'
+              delay: 69.856µs
+              jitterMax: 6.985µs
+    - request: '?'
+      responses:
+        - chunks:
+            - data: '"Jumperless firmware version: 5.3.1.0\r\n"'
+              delay: 114.906691ms
+              jitterMax: 11.490669ms
+        - chunks:
+            - data: '"Jumperless firmware version: 5.3.1.0\r\n"'
+              delay: 95.246251ms
+              jitterMax: 9.524625ms
