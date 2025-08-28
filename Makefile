@@ -1,7 +1,6 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
-EMULATOR_IMG ?= jumperless-emulator:latest
-PROXY_IMG ?= jumperless-proxy:latest
+UTILS_IMG ?= jumperless-utils:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -47,16 +46,12 @@ help: ## Display this help.
 tidy: ## Run go mod tidy to clean up go.mod and go.sum files.
 	go mod tidy
 
-.PHONY: tidy-emulator
-tidy-emulator: ## Run go mod tidy to clean up go.mod and go.sum files.
-	cd utils/emulator; go mod tidy
-
-.PHONY: tidy-proxy
-tidy-proxy: ## Run go mod tidy to clean up go.mod and go.sum files.
-	cd utils/proxy; go mod tidy
+.PHONY: tidy-utils
+tidy-utils: ## Run go mod tidy to clean up go.mod and go.sum files.
+	cd utils; go mod tidy
 
 .PHONY: tidy-all
-tidy-all: tidy tidy-emulator tidy-proxy ## Run go mod tidy to clean up go.mod and go.sum files in all directories.
+tidy-all: tidy tidy-utils ## Run go mod tidy to clean up go.mod and go.sum files in all directories.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -71,49 +66,37 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt-all
-fmt-all: fmt fmt-emulator fmt-proxy
+fmt-all: fmt fmt-utils
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
 
-.PHONY: fmt-emulator
-fmt-emulator: ## Run go fmt against emulator code.
-	cd utils/emulator; go fmt ./...
-
-.PHONY: fmt-proxy
-fmt-proxy: ## Run go fmt against proxy code.
-	cd utils/proxy; go fmt ./...
+.PHONY: fmt-utils
+fmt-utils: ## Run go fmt against utils code.
+	cd utils; go fmt ./...
 
 .PHONY: vet-all
-vet-all: vet vet-emulator vet-proxy
+vet-all: vet vet-utils
 
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: vet-emulator
-vet-emulator: ## Run go vet against emulator code.
-	cd utils/emulator; go vet ./...
-
-.PHONY: vet-proxy
-vet-proxy: ## Run go vet against proxy code.
-	cd utils/proxy; go vet ./...
+.PHONY: vet-utils
+vet-utils: ## Run go vet against utils code.
+	cd utils; go vet ./...
 
 .PHONY: test-all
-test-all: test test-emulator test-proxy
+test-all: test test-utils
 
 .PHONY: test
 test: gen-go manifests generate fmt vet setup-envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
-.PHONY: test-emulator
-test-emulator: fmt-emulator vet-emulator
-	cd utils/emulator; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
-
-.PHONY: test-proxy
-test-proxy: fmt-proxy vet-proxy
-	cd utils/proxy; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+.PHONY: test-utils
+test-utils: fmt-utils vet-utils
+	cd utils; go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
 
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
@@ -146,34 +129,26 @@ cleanup-test-e2e: ## Tear down the Kind cluster used for e2e tests
 	@$(KIND) delete cluster --name $(KIND_CLUSTER)
 
 .PHONY: lint-all
-lint-all: lint lint-emulator lint-proxy
+lint-all: lint lint-utils
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
 
-.PHONY: lint-emulator
-lint-emulator: golangci-lint ## Run golangci-lint linter
-	cd utils/emulator; $(GOLANGCI_LINT) run
-
-.PHONY: lint-proxy
-lint-proxy: golangci-lint ## Run golangci-lint linter
-	cd utils/proxy; $(GOLANGCI_LINT) run
+.PHONY: lint-utils
+lint-utils: golangci-lint ## Run golangci-lint linter
+	cd utils; $(GOLANGCI_LINT) run
 
 .PHONY: lint-fix-all
-lint-fix-all: lint-fix lint-fix-emulator lint-fix-proxy
+lint-fix-all: lint-fix lint-fix-utils
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
-.PHONY: lint-fix-emulator
-lint-fix-emulator: golangci-lint ## Run golangci-lint linter
-	cd utils/emulator; $(GOLANGCI_LINT) run --fix
-
-.PHONY: lint-fix-proxy
-lint-fix-proxy: golangci-lint ## Run golangci-lint linter
-	cd utils/proxy; $(GOLANGCI_LINT) run --fix
+.PHONY: lint-fix-utils
+lint-fix-utils: golangci-lint ## Run golangci-lint linter
+	cd utils; $(GOLANGCI_LINT) run --fix
 
 .PHONY: lint-config
 lint-config: golangci-lint ## Verify golangci-lint linter configuration
@@ -185,16 +160,12 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 build: gen-go manifests generate fmt vet $(LOCALBIN) ## Build manager binary.
 	go build -o $(LOCALBIN)/manager ./cmd
 
-.PHONY: build-emulator
-build-emulator: fmt vet $(LOCALBIN) ## Build jumperless emulator binary.
-	go build -C utils/emulator -o $(LOCALBIN)/emulator ./cmd
-
-.PHONY: build-proxy
-build-proxy: fmt vet $(LOCALBIN) ## Build jumperless proxy binary.
-	go build -C utils/proxy -o $(LOCALBIN)/proxy ./cmd
+.PHONY: build-utils
+build-utils: fmt vet $(LOCALBIN) ## Build jumperless utils binary.
+	go build -C utils -o $(LOCALBIN)/jumperless-utils ./cmd
 
 .PHONY: build-all
-build-all: build build-emulator build-proxy ## Build all binaries.
+build-all: build build-utils ## Build all binaries.
 
 .PHONY: run
 run: gen-go manifests generate fmt vet ## Run a controller from your host.
@@ -207,31 +178,23 @@ run: gen-go manifests generate fmt vet ## Run a controller from your host.
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build -t ${IMG} .
 
-.PHONY: docker-build-emulator
-docker-build-emulator: ## Build docker image for the emulator.
-	$(CONTAINER_TOOL) build -f Dockerfile.emulator -t ${EMULATOR_IMG} .
-
-.PHONY: docker-build-proxy
-docker-build-proxy: ## Build docker image for the proxy.
-	$(CONTAINER_TOOL) build -f Dockerfile.proxy -t ${PROXY_IMG} .
+.PHONY: docker-build-utils
+docker-build-utils: ## Build docker image for the utils.
+	$(CONTAINER_TOOL) build -f Dockerfile.utils -t ${UTILS_IMG} .
 
 .PHONY: docker-build-all
-docker-build-all: docker-build docker-build-emulator docker-build-proxy ## Build all docker images.
+docker-build-all: docker-build docker-build-utils ## Build all docker images.
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
 
-.PHONY: docker-push-emulator
-docker-push-emulator: ## Push docker image for the emulator.
-	$(CONTAINER_TOOL) push ${EMULATOR_IMG}
-
-.PHONY: docker-push-proxy
-docker-push-proxy: ## Push docker image for the proxy.
-	$(CONTAINER_TOOL) push ${PROXY_IMG}
+.PHONY: docker-push-utils
+docker-push-utils: ## Push docker image for the utils.
+	$(CONTAINER_TOOL) push ${UTILS_IMG}
 
 .PHONY: docker-push-all
-docker-push-all: docker-push docker-push-emulator docker-push-proxy ## Push all docker images.
+docker-push-all: docker-push docker-push-utils ## Push all docker images.
 
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
