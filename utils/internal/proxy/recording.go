@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"time"
 
-	emulatorConfig "github.com/detiber/k8s-jumperless/utils/emulator/emulator/config"
+	emulatorConfig "github.com/detiber/k8s-jumperless/utils/internal/emulator/config"
 	"gopkg.in/yaml.v3"
 )
 

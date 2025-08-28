@@ -21,6 +21,14 @@ import "time"
 // const DefaultBaudRate = 115200
 const DefaultBufferSize = 1024
 
+func NewDefaultConfig() *EmulatorConfig {
+	return &EmulatorConfig{
+		BufferSize:  DefaultBufferSize,
+		VirtualPort: "",
+		Mappings:    []RequestResponse{},
+	}
+}
+
 // EmulatorConfig represents the emulator configuration
 type EmulatorConfig struct {
 	BufferSize  int    `json:"bufferSize"  mapstructure:"buffer-size"  yaml:"bufferSize"`
@@ -32,10 +40,10 @@ type EmulatorConfig struct {
 
 // RequestResponse defines a request pattern and its response(s)
 type RequestResponse struct {
-	// Request pattern (can be literal string or regex)
+	// Request
 	Request string `json:"request" mapstructure:"request" yaml:"request"`
 
-	// Multiple responses with ordering/randomization
+	// Multiple responses with ordering
 	Responses []ResponseOption `json:"responses" mapstructure:"responses" yaml:"responses"`
 }
 
@@ -50,7 +58,7 @@ type ResponseChunk struct {
 	JitterMax time.Duration `json:"jitterMax" mapstructure:"jitter-max" yaml:"jitterMax"`
 }
 
-// ResponseOption represents a single response option with optional weight
+// ResponseOption represents a single response option
 type ResponseOption struct {
 	Chunks []ResponseChunk `json:"chunks" mapstructure:"chunks" yaml:"chunks"`
 }

@@ -19,6 +19,16 @@ package config
 const DefaultBaudRate = 115200
 const DefaultBufferSize = 1024
 
+// NewDefaultConfig returns a ProxyConfig with default values
+func NewDefaultConfig() *ProxyConfig {
+	return &ProxyConfig{
+		BaudRate:    DefaultBaudRate,
+		BufferSize:  DefaultBufferSize,
+		VirtualPort: "",
+		RealPort:    "",
+	}
+}
+
 // ProxyConfig represents the proxy configuration
 type ProxyConfig struct {
 	BaudRate       int    `json:"baudRate"       mapstructure:"baud-rate"       yaml:"baudRate"`

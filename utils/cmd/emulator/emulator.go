@@ -1,0 +1,100 @@
+/*
+Copyright 2025.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package emulator
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	"github.com/detiber/k8s-jumperless/utils/internal/emulator"
+	"github.com/detiber/k8s-jumperless/utils/internal/emulator/config"
+)
+
+const (
+	cfgPrefix      = "emulator"
+	cfgBufferSize  = "buffer-size"
+	cfgVirtualPort = "virtual-port"
+)
+
+func NewEmulatorCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Command {
+	logger := log.New(parentLogger.Writer(), parentLogger.Prefix()+" [emulator]", parentLogger.Flags())
+	cmd := &cobra.Command{
+		Use:   "emulator",
+		Short: "Jumperless emulator",
+		Long:  `A emulator sends configured commands to a Jumperless device over a serial port`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx := cmd.Context()
+			return runEmulator(ctx, v, logger)
+		},
+	}
+
+	// Set default config
+	defaultConfig := config.NewDefaultConfig()
+	v.SetDefault(cfgPrefix, defaultConfig)
+
+	// Command-line flags
+	cmd.Flags().Int(cfgBufferSize, defaultConfig.BufferSize, "buffer size for reading from the real serial port")
+	_ = v.BindPFlag(cfgPrefix+"."+cfgBufferSize, cmd.Flags().Lookup(cfgBufferSize))
+
+	cmd.Flags().String(cfgVirtualPort, defaultConfig.VirtualPort,
+		"serial port to use (if not specified, will attempt to auto-detect)")
+	_ = v.BindPFlag(cfgPrefix+"."+cfgVirtualPort, cmd.Flags().Lookup(cfgVirtualPort))
+
+	return cmd
+}
+
+func runEmulator(ctx context.Context, v *viper.Viper, logger *log.Logger) error {
+	emulatorConfig := new(config.EmulatorConfig)
+
+	if err := v.Unmarshal(emulatorConfig); err != nil {
+		return fmt.Errorf("failed to unmarshal current config: %w", err)
+	}
+
+	logger.Printf("Starting Jumperless emulator with config: %+v", emulatorConfig)
+
+	// Create emulator
+	e, err := emulator.New(emulatorConfig, logger)
+	if err != nil {
+		return fmt.Errorf("failed to create emulator: %w", err)
+	}
+
+	emuCtx, cancel := context.WithCancel(ctx)
+
+	// Start emulator
+	if err := e.Start(emuCtx); err != nil {
+		cancel()
+		return fmt.Errorf("failed to start emulator: %w", err)
+	}
+
+	logger.Printf("Emulator started. Virtual serial port: %s", e.GetPortName())
+	logger.Printf("Press Ctrl+C to stop")
+
+	<-ctx.Done()
+	cancel()
+
+	logger.Printf("Stopping emulator...")
+	if err := e.Stop(); err != nil {
+		logger.Printf("Error stopping emulator: %v", err)
+	}
+
+	logger.Printf("emulator stopped")
+	return nil
+}

@@ -34,8 +34,7 @@ For more information about Jumperless v5 hardware, visit the [official documenta
 ## Components
 
 - **k8s-jumperless manager**: The main Kubernetes controller
-- **Jumperless emulator**: Virtual device for testing ([docs](docs/emulator-proxy.md))
-- **Jumperless proxy**: Recording proxy for generating test configurations ([docs](docs/emulator-proxy.md))
+- **Jumperless utils**: Utilities for testing
 
 ## Getting Started
 
@@ -103,26 +102,24 @@ make undeploy
 
 The project includes testing utilities in the `/utils/` directory, each as independent Go submodules:
 
-- **`/utils/emulator/`** - Comprehensive hardware emulator with realistic device simulation
-- **`/utils/proxy/`** - Recording proxy for capturing real device interactions  
+- **`/utils/`** - Utilites for testing, including an emulator and proxy real device interactions  
 
 ### Building Tools
 
-Build all binaries including the operator, emulator and proxy:
+Build all binaries including the operator and utils:
 
 ```sh
-make build-all  # Builds manager + emulator + proxy
+make build-all  # Builds manager + utils
 ```
 
 Or build components individually:
 
 ```sh
 make build            # Build k8s-jumperless manager only
-make build-emulator   # Build emulator
-make build-proxy      # Build proxy  
+make build-utils      # Build utils
 ```
 
-### Testing with Emulator
+### Testing with the Emulator
 
 The emulator provides hardware simulation:
 
@@ -136,10 +133,10 @@ make
 # install the crds
 make install
 
-# build the emulator docker image
-make docker-build-proxy
+# build the utils docker image
+make docker-build-utils
 
-docker run --privileged -d --rm --name jumperless-emulator -v /dev:/dev -v ./examples:/examples jumperless-emulator:latest --virtual-port /examples/jumperless-port --config /examples/emulator-data.yml
+docker run --privileged -d --rm --name jumperless-emulator -v /dev:/dev -v ./examples:/examples jumperless-utils:latest emulator --virtual-port /examples/jumperless-port --config /examples/jumperless-utils.yml
 
 cat <<EOF | kubectl apply -f -
 apiVersion: jumperless.detiber.us/v5alpha1
@@ -159,7 +156,7 @@ docker stop jumperless-emulator
 
 ### Recording with Proxy
 
-To generate an emulator config using the controller
+To generate an emulator config using the controller and proxy
 ```sh
 # create a kind cluster
 kind create cluster
@@ -170,10 +167,10 @@ make
 # install the crds
 make install
 
-# build the proxy docker image
-make docker-build-proxy
+# build the utils docker image
+make docker-build-utils
 
-docker run --privileged -d --rm --name jumperless-proxy -v /dev:/dev -v ./examples:/examples jumperless-proxy:latest --virtual-port /examples/jumperless-port --emulator-config /examples/emulator-data.yml
+docker run --privileged -d --rm --name jumperless-proxy -v /dev:/dev -v ./examples:/examples jumperless-utils:latest proxy --virtual-port /examples/jumperless-port --config /examples/jumperless-utils.yml
 
 cat <<EOF | kubectl apply -f -
 apiVersion: jumperless.detiber.us/v5alpha1
@@ -197,15 +194,12 @@ Each utility has its own Docker support with multi-stage builds:
 
 ```sh
 # Build utility Docker images
-make docker-build-all  # Builds all images (manager + emulator + proxy)
+make docker-build-all  # Builds all images (manager + utils)
 
 # Or build individually
 make docker-build           # Build k8s-jumperless image only
-make docker-build-emulator  # Build jumperless-emulator image
-make docker-build-proxy     # Build jumperless-proxy image
+make docker-build-utils     # Build jumperless-utils image
 ```
-
-See [docs/emulator-proxy.md](docs/emulator-proxy.md) for detailed documentation.
 
 ## Project Distribution
 

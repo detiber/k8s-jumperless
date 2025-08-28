@@ -1,0 +1,25 @@
+name: Utils Tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'utils/**'
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'utils/**'
+
+jobs:
+  test-utils:
+    uses: ./.github/workflows/_test.yml
+    with:
+      go-version-file: "utils/go.mod"
+      go-cache-dependency-path: "utils/go.sum"
+      module-working-directory: "utils"
+      target-name: "test-utils"

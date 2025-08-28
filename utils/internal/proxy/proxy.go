@@ -30,7 +30,7 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/detiber/k8s-jumperless/jumperless"
-	"github.com/detiber/k8s-jumperless/utils/proxy/proxy/config"
+	"github.com/detiber/k8s-jumperless/utils/internal/proxy/config"
 	"go.bug.st/serial"
 )
 
