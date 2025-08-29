@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	emulatorConfig "github.com/detiber/k8s-jumperless/utils/internal/emulator/config"
 	"github.com/detiber/k8s-jumperless/utils/internal/proxy"
 	"github.com/detiber/k8s-jumperless/utils/internal/proxy/config"
 )
@@ -56,6 +57,9 @@ func NewProxyCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Command {
 	cmd.Flags().Int(config.FlagBaudRate, config.DefaultBaudRate, "baud rate for the real serial port")
 	_ = v.BindPFlag(config.ViperBaudRate, cmd.Flags().Lookup(config.FlagBaudRate))
 
+	cmd.Flags().Bool(config.FlagOverwrite, false, "overwrite existing emulator mappings instead of appending")
+	_ = v.BindPFlag(config.ViperOverwrite, cmd.Flags().Lookup(config.FlagOverwrite))
+
 	return cmd
 }
 
@@ -73,6 +77,36 @@ func runProxy(ctx context.Context, v *viper.Viper, logger *log.Logger) error {
 	recording, err := p.Run(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to run proxy: %w", err)
+	}
+
+	// Check if we have any recorded requests/responses
+	if len(recording) == 0 {
+		logger.Printf("No requests/responses recorded")
+		return nil
+	}
+
+	// Save recording
+	emuConfig := emulatorConfig.NewFromViper(v)
+	if len(emuConfig.Mappings) != 0 || proxyConfig.Overwrite {
+		logger.Printf(
+			"Overwriting existing emulator mappings and saving %d recorded request/response pairs to emulator config",
+			len(recording),
+		)
+
+		emuConfig.Mappings = recording
+
+		// TODO: save config
+	} else {
+		logger.Printf(
+			"Existing emulator mappings, appending %d recorded request/response pairs to emulator config",
+			len(recording),
+		)
+
+		for _, r := range recording {
+			emuConfig.Mappings.AddResponse(r.Request, r.Responses...)
+		}
+
+		// TODO: save config
 	}
 
 	logger.Printf("Recorded %d request/response pairs", len(recording))

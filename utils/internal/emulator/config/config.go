@@ -17,6 +17,8 @@ limitations under the License.
 package config
 
 import (
+	"iter"
+	"slices"
 	"time"
 
 	"github.com/spf13/viper"
@@ -71,7 +73,45 @@ type EmulatorConfig struct {
 	VirtualPort string `json:"virtualPort" mapstructure:"virtual-port" yaml:"virtualPort"`
 
 	// Request/response mappings
-	Mappings []RequestResponse `json:"mappings" mapstructure:"mappings" yaml:"mappings"`
+	Mappings Mappings `json:"mappings" mapstructure:"mappings" yaml:"mappings"`
+}
+
+type Mappings []RequestResponse
+
+func (m *Mappings) Get(request string) (*RequestResponse, bool) {
+	i := slices.IndexFunc(*m, func(r RequestResponse) bool {
+		return r.Request == request
+	})
+	if i >= 0 {
+		return &(*m)[i], true
+	}
+
+	return nil, false
+}
+
+func (m *Mappings) AddResponse(request string, response ...ResponseOption) {
+	i := slices.IndexFunc(*m, func(r RequestResponse) bool {
+		return r.Request == request
+	})
+
+	if i >= 0 {
+		(*m)[i].Responses = append((*m)[i].Responses, response...)
+	} else {
+		*m = append(*m, RequestResponse{
+			Request:   request,
+			Responses: response,
+		})
+	}
+}
+
+func (m *Mappings) All() iter.Seq2[string, RequestResponse] {
+	return func(yield func(string, RequestResponse) bool) {
+		for _, mapping := range *m {
+			if !yield(mapping.Request, mapping) {
+				return
+			}
+		}
+	}
 }
 
 // RequestResponse defines a request pattern and its response(s)

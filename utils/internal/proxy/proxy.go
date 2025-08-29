@@ -62,7 +62,7 @@ func New(c *config.ProxyConfig, logger *log.Logger) (*Proxy, error) {
 
 // Run the proxy
 // The Run method will block until the context is cancelled or an error occurs
-func (p *Proxy) Run(ctx context.Context) ([]emulatorConfig.RequestResponse, error) {
+func (p *Proxy) Run(ctx context.Context) (emulatorConfig.Mappings, error) {
 	// Create virtual serial port (pty)
 	pseudoTTY, virtualTTY, err := pty.Open()
 	if err != nil {

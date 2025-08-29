@@ -20,8 +20,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"maps"
-	"slices"
 	"strconv"
 	"time"
 
@@ -37,7 +35,7 @@ var (
 // Recorder handles recording of serial port interactions
 type Recorder struct {
 	logger   *log.Logger
-	requests map[string]emulatorConfig.RequestResponse
+	requests emulatorConfig.Mappings
 	reqChan  chan []byte
 	resChan  chan []byte
 }
@@ -46,7 +44,7 @@ type Recorder struct {
 func NewRecorder(logger *log.Logger) *Recorder {
 	return &Recorder{
 		logger:   logger,
-		requests: make(map[string]emulatorConfig.RequestResponse),
+		requests: make(emulatorConfig.Mappings, 0),
 		reqChan:  make(chan []byte),
 		resChan:  make(chan []byte),
 	}
@@ -62,46 +60,41 @@ func (r *Recorder) RecordResponse(res []byte) {
 	r.resChan <- res
 }
 
-func (r *Recorder) GetRecording() []emulatorConfig.RequestResponse {
-	return slices.Collect(maps.Values(r.requests))
+func (r *Recorder) GetRecording() emulatorConfig.Mappings {
+	return r.requests
 }
 
 // Run the Recorder
 // The Recorder will run until the context is cancelled
 func (r *Recorder) Run(ctx context.Context) {
+	var currentRequest string
 	var currentResponse *emulatorConfig.ResponseOption
 	var currentRequestTime time.Time
+
+	defer (func() {
+		// Ensure that we finalize the last recording if needed
+		if currentRequest != "" && currentResponse != nil {
+			r.logger.Printf("Finalizing recording for request: %s", currentRequest)
+			r.requests.AddResponse(currentRequest, *currentResponse)
+		}
+	})()
 
 	for {
 		select {
 		case <-ctx.Done():
 			r.logger.Println("Recorder stopping")
-
 			return
 		case req := <-r.reqChan:
 			r.logger.Printf("Received request to record: %s", req)
-			currentRequestTime = time.Now()
 
-			reqStr := string(req)
-
-			if _, exists := r.requests[reqStr]; !exists {
-				r.requests[reqStr] = emulatorConfig.RequestResponse{
-					Request: reqStr,
-					Responses: []emulatorConfig.ResponseOption{
-						{Chunks: []emulatorConfig.ResponseChunk{}},
-					},
-				}
-			} else {
-				// Append a new response option for subsequent responses to the same request
-				r.requests[reqStr] = emulatorConfig.RequestResponse{
-					Request: reqStr,
-					Responses: append(r.requests[reqStr].Responses, emulatorConfig.ResponseOption{
-						Chunks: []emulatorConfig.ResponseChunk{},
-					}),
-				}
+			if currentRequest != "" && currentResponse != nil {
+				r.logger.Printf("Saving recording for previous request: %s", currentRequest)
+				r.requests.AddResponse(currentRequest, *currentResponse)
 			}
 
-			currentResponse = &r.requests[reqStr].Responses[len(r.requests[reqStr].Responses)-1]
+			currentRequestTime = time.Now()
+			currentRequest = string(req)
+			currentResponse = new(emulatorConfig.ResponseOption)
 		case res := <-r.resChan:
 			if currentResponse == nil {
 				r.logger.Printf("Warning: %v: %s", ErrResponseWithoutRequest, res)

@@ -28,6 +28,7 @@ const (
 	FlagBufferSize  = "buffer-size"
 	FlagVirtualPort = "virtual-port"
 	FlagRealPort    = "real-port"
+	FlagOverwrite   = "overwrite"
 
 	// Viper prefix and keys for configuration
 	ViperPrefix      = "proxy"
@@ -35,6 +36,7 @@ const (
 	ViperBufferSize  = ViperPrefix + "." + FlagBufferSize
 	ViperVirtualPort = ViperPrefix + "." + FlagVirtualPort
 	ViperRealPort    = ViperPrefix + "." + FlagRealPort
+	ViperOverwrite   = ViperPrefix + "." + FlagOverwrite
 )
 
 // NewDefaultConfig returns a ProxyConfig with default values
@@ -44,6 +46,7 @@ func NewDefaultConfig() *ProxyConfig {
 		BufferSize:  DefaultBufferSize,
 		VirtualPort: "",
 		RealPort:    "",
+		Overwrite:   false,
 	}
 }
 
@@ -64,6 +67,10 @@ func NewFromViper(v *viper.Viper) *ProxyConfig {
 		cfg.RealPort = v.GetString(ViperRealPort)
 	}
 
+	if v.IsSet(ViperOverwrite) {
+		cfg.Overwrite = v.GetBool(ViperOverwrite)
+	}
+
 	return cfg
 }
 
@@ -73,4 +80,5 @@ type ProxyConfig struct {
 	BufferSize  int    `json:"bufferSize"  mapstructure:"bufferSize"  yaml:"bufferSize"`
 	VirtualPort string `json:"virtualPort" mapstructure:"virtualPort" yaml:"virtualPort"`
 	RealPort    string `json:"realPort"    mapstructure:"realPort"    yaml:"realPort"`
+	Overwrite   bool   `json:"overwrite"   mapstructure:"overwrite"   yaml:"overwrite"`
 }
