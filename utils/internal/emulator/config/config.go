@@ -16,11 +16,47 @@ limitations under the License.
 
 package config
 
-import "time"
+import (
+	"time"
 
-// const DefaultBaudRate = 115200
-const DefaultBufferSize = 1024
+	"github.com/spf13/viper"
+)
 
+const (
+	// Default values for the emulator configuration
+	DefaultBufferSize = 1024
+
+	// Flag names for command-line arguments
+	FlagBufferSize  = "buffer-size"
+	FlagVirtualPort = "virtual-port"
+
+	// Viper prefix and keys for configuration
+	ViperPrefix      = "emulator"
+	ViperBufferSize  = ViperPrefix + "." + FlagBufferSize
+	ViperVirtualPort = ViperPrefix + "." + FlagVirtualPort
+)
+
+// NewFromViper creates an EmulatorConfig from a viper instance
+func NewFromViper(v *viper.Viper) *EmulatorConfig {
+	cfg := NewDefaultConfig()
+
+	if v.IsSet(ViperBufferSize) {
+		cfg.BufferSize = v.GetInt(ViperBufferSize)
+	}
+	if v.IsSet(ViperVirtualPort) {
+		cfg.VirtualPort = v.GetString(ViperVirtualPort)
+	}
+	if v.IsSet(ViperPrefix + ".mappings") {
+		if err := v.UnmarshalKey(ViperPrefix+".mappings", &cfg.Mappings); err != nil {
+			// If unmarshaling fails, return an empty list of mappings
+			cfg.Mappings = []RequestResponse{}
+		}
+	}
+
+	return cfg
+}
+
+// NewDefaultConfig returns an EmulatorConfig with default values
 func NewDefaultConfig() *EmulatorConfig {
 	return &EmulatorConfig{
 		BufferSize:  DefaultBufferSize,

@@ -16,10 +16,28 @@ limitations under the License.
 
 package config
 
-import "time"
+import (
+	"time"
 
-const DefaultBaudRate = 115200
-const DefaultBufferSize = 1024
+	"github.com/spf13/viper"
+)
+
+const (
+	// Default values for the generator configuration
+	DefaultBaudRate   = 115200
+	DefaultBufferSize = 1024
+
+	// Flag names for command-line arguments
+	FlagBaudRate   = "baud-rate"
+	FlagBufferSize = "buffer-size"
+	FlagPort       = "port"
+
+	// Viper prefix and keys for configuration
+	ViperPrefix     = "generator"
+	ViperBaudRate   = ViperPrefix + "." + FlagBaudRate
+	ViperBufferSize = ViperPrefix + "." + FlagBufferSize
+	ViperPort       = ViperPrefix + "." + FlagPort
+)
 
 func NewDefaultConfig() *GeneratorConfig {
 	return &GeneratorConfig{
@@ -28,6 +46,30 @@ func NewDefaultConfig() *GeneratorConfig {
 		Port:       "",
 		Requests:   []Request{},
 	}
+}
+
+// NewFromViper creates a GeneratorConfig from a viper instance
+func NewFromViper(v *viper.Viper) *GeneratorConfig {
+	cfg := NewDefaultConfig()
+
+	if v.IsSet(ViperBaudRate) {
+		cfg.BaudRate = v.GetInt(ViperBaudRate)
+	}
+	if v.IsSet(ViperBufferSize) {
+		cfg.BufferSize = v.GetInt(ViperBufferSize)
+	}
+	if v.IsSet(ViperPort) {
+		cfg.Port = v.GetString(ViperPort)
+	}
+	if v.IsSet(ViperPrefix + ".requests") {
+		cfg.Requests = []Request{}
+		if err := v.UnmarshalKey(ViperPrefix+".requests", &cfg.Requests); err != nil {
+			// If unmarshaling fails, return an empty slice
+			cfg.Requests = []Request{}
+		}
+	}
+
+	return cfg
 }
 
 // generatorConfig represents the generator configuration

@@ -28,13 +28,6 @@ import (
 	"github.com/detiber/k8s-jumperless/utils/internal/generator/config"
 )
 
-const (
-	cfgPrefix     = "generator"
-	cfgBaudRate   = "baud-rate"
-	cfgBufferSize = "buffer-size"
-	cfgPort       = "port"
-)
-
 func NewGeneratorCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Command {
 	logger := log.New(parentLogger.Writer(), parentLogger.Prefix()+" [generator]", parentLogger.Flags())
 	cmd := &cobra.Command{
@@ -47,29 +40,22 @@ func NewGeneratorCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Comman
 		},
 	}
 
-	// Set default config
-	defaultConfig := config.NewDefaultConfig()
-	v.SetDefault(cfgPrefix, defaultConfig)
-
 	// Command-line flags
-	cmd.Flags().Int(cfgBaudRate, defaultConfig.BaudRate, "baud rate for the real serial port")
-	_ = v.BindPFlag(cfgPrefix+"."+cfgBaudRate, cmd.Flags().Lookup(cfgBaudRate))
+	cmd.Flags().Int(config.FlagBaudRate, config.DefaultBaudRate, "baud rate for the real serial port")
+	_ = v.BindPFlag(config.ViperBaudRate, cmd.Flags().Lookup(config.FlagBaudRate))
 
-	cmd.Flags().Int(cfgBufferSize, defaultConfig.BufferSize, "buffer size for reading from the real serial port")
-	_ = v.BindPFlag(cfgPrefix+"."+cfgBufferSize, cmd.Flags().Lookup(cfgBufferSize))
+	cmd.Flags().Int(config.FlagBufferSize, config.DefaultBufferSize, "buffer size for reading from the real serial port")
+	_ = v.BindPFlag(config.ViperBufferSize, cmd.Flags().Lookup(config.FlagBufferSize))
 
-	cmd.Flags().String(cfgPort, defaultConfig.Port, "serial port to use (if not specified, will attempt to auto-detect)")
-	_ = v.BindPFlag(cfgPrefix+"."+cfgPort, cmd.Flags().Lookup(cfgPort))
+	cmd.Flags().String(config.FlagPort, "",
+		"real serial port to use (if not specified, will attempt to auto-detect)")
+	_ = v.BindPFlag(config.ViperPort, cmd.Flags().Lookup(config.FlagPort))
 
 	return cmd
 }
 
 func runGenerator(ctx context.Context, v *viper.Viper, logger *log.Logger) error {
-	generatorConfig := new(config.GeneratorConfig)
-
-	if err := v.Unmarshal(generatorConfig); err != nil {
-		return fmt.Errorf("failed to unmarshal current config: %w", err)
-	}
+	generatorConfig := config.NewFromViper(v)
 
 	logger.Printf("Starting Jumperless generator with config: %+v", generatorConfig)
 
@@ -79,9 +65,9 @@ func runGenerator(ctx context.Context, v *viper.Viper, logger *log.Logger) error
 		return fmt.Errorf("failed to create generator: %w", err)
 	}
 
-	// Start generator
+	// Run generator
 	if err := g.Run(ctx); err != nil {
-		return fmt.Errorf("failed to start generator: %w", err)
+		return fmt.Errorf("failed to run generator: %w", err)
 	}
 
 	logger.Printf("generator stopped")

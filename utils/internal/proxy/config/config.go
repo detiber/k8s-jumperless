@@ -16,8 +16,26 @@ limitations under the License.
 
 package config
 
-const DefaultBaudRate = 115200
-const DefaultBufferSize = 1024
+import "github.com/spf13/viper"
+
+const (
+	// Default values for the proxy configuration
+	DefaultBaudRate   = 115200
+	DefaultBufferSize = 1024
+
+	// Flag names for command-line arguments
+	FlagBaudRate    = "baud-rate"
+	FlagBufferSize  = "buffer-size"
+	FlagVirtualPort = "virtual-port"
+	FlagRealPort    = "real-port"
+
+	// Viper prefix and keys for configuration
+	ViperPrefix      = "proxy"
+	ViperBaudRate    = ViperPrefix + "." + FlagBaudRate
+	ViperBufferSize  = ViperPrefix + "." + FlagBufferSize
+	ViperVirtualPort = ViperPrefix + "." + FlagVirtualPort
+	ViperRealPort    = ViperPrefix + "." + FlagRealPort
+)
 
 // NewDefaultConfig returns a ProxyConfig with default values
 func NewDefaultConfig() *ProxyConfig {
@@ -29,11 +47,30 @@ func NewDefaultConfig() *ProxyConfig {
 	}
 }
 
+// NewFromViper creates a ProxyConfig from a viper instance
+func NewFromViper(v *viper.Viper) *ProxyConfig {
+	cfg := NewDefaultConfig()
+
+	if v.IsSet(ViperBaudRate) {
+		cfg.BaudRate = v.GetInt(ViperBaudRate)
+	}
+	if v.IsSet(ViperBufferSize) {
+		cfg.BufferSize = v.GetInt(ViperBufferSize)
+	}
+	if v.IsSet(ViperVirtualPort) {
+		cfg.VirtualPort = v.GetString(ViperVirtualPort)
+	}
+	if v.IsSet(ViperRealPort) {
+		cfg.RealPort = v.GetString(ViperRealPort)
+	}
+
+	return cfg
+}
+
 // ProxyConfig represents the proxy configuration
 type ProxyConfig struct {
-	BaudRate       int    `json:"baudRate"       mapstructure:"baud-rate"       yaml:"baudRate"`
-	BufferSize     int    `json:"bufferSize"     mapstructure:"buffer-size"     yaml:"bufferSize"`
-	VirtualPort    string `json:"virtualPort"    mapstructure:"virtual-port"    yaml:"virtualPort"`
-	RealPort       string `json:"realPort"       mapstructure:"real-port"       yaml:"realPort"`
-	EmulatorConfig string `json:"emulatorConfig" mapstructure:"emulator-config" yaml:"emulatorConfig"`
+	BaudRate    int    `json:"baudRate"    mapstructure:"baudRate"    yaml:"baudRate"`
+	BufferSize  int    `json:"bufferSize"  mapstructure:"bufferSize"  yaml:"bufferSize"`
+	VirtualPort string `json:"virtualPort" mapstructure:"virtualPort" yaml:"virtualPort"`
+	RealPort    string `json:"realPort"    mapstructure:"realPort"    yaml:"realPort"`
 }

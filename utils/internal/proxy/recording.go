@@ -19,14 +19,13 @@ package proxy
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
-	"os"
+	"maps"
+	"slices"
 	"strconv"
 	"time"
 
 	emulatorConfig "github.com/detiber/k8s-jumperless/utils/internal/emulator/config"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -38,17 +37,15 @@ var (
 // Recorder handles recording of serial port interactions
 type Recorder struct {
 	logger   *log.Logger
-	filename string
 	requests map[string]emulatorConfig.RequestResponse
 	reqChan  chan []byte
 	resChan  chan []byte
 }
 
 // NewRecorder creates a new Recorder instance
-func NewRecorder(logger *log.Logger, filename string) *Recorder {
+func NewRecorder(logger *log.Logger) *Recorder {
 	return &Recorder{
 		logger:   logger,
-		filename: filename,
 		requests: make(map[string]emulatorConfig.RequestResponse),
 		reqChan:  make(chan []byte),
 		resChan:  make(chan []byte),
@@ -65,37 +62,13 @@ func (r *Recorder) RecordResponse(res []byte) {
 	r.resChan <- res
 }
 
-func (r *Recorder) writeRecording() error {
-	if r.filename == "" {
-		r.logger.Println("No recording filename specified, skipping write")
-		return nil
-	}
-
-	r.logger.Printf("Writing recording to %s", r.filename)
-
-	emuConfig := emulatorConfig.EmulatorConfig{
-		Mappings: make([]emulatorConfig.RequestResponse, 0, len(r.requests)),
-	}
-
-	for key := range r.requests {
-		emuConfig.Mappings = append(emuConfig.Mappings, r.requests[key])
-	}
-
-	data, err := yaml.Marshal(emuConfig)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(r.filename, data, 0600); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
-	}
-
-	r.logger.Printf("Recording written to %s", r.filename)
-
-	return nil
+func (r *Recorder) GetRecording() []emulatorConfig.RequestResponse {
+	return slices.Collect(maps.Values(r.requests))
 }
 
-func (r *Recorder) recordLoop(ctx context.Context) {
+// Run the Recorder
+// The Recorder will run until the context is cancelled
+func (r *Recorder) Run(ctx context.Context) {
 	var currentResponse *emulatorConfig.ResponseOption
 	var currentRequestTime time.Time
 
@@ -103,10 +76,6 @@ func (r *Recorder) recordLoop(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			r.logger.Println("Recorder stopping")
-
-			if err := r.writeRecording(); err != nil {
-				r.logger.Printf("Error writing recording: %v", err)
-			}
 
 			return
 		case req := <-r.reqChan:
@@ -152,13 +121,4 @@ func (r *Recorder) recordLoop(ctx context.Context) {
 			currentRequestTime = time.Now()
 		}
 	}
-}
-
-// Start begins the recording process
-func (r *Recorder) Start(ctx context.Context) {
-	r.logger.Println("Recorder started")
-
-	go func() {
-		r.recordLoop(ctx)
-	}()
 }
