@@ -19,14 +19,11 @@ package proxy
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
 
-	emulatorConfig "github.com/detiber/k8s-jumperless/utils/emulator/emulator/config"
-	"gopkg.in/yaml.v3"
+	emulatorConfig "github.com/detiber/k8s-jumperless/utils/internal/emulator/config"
 )
 
 var (
@@ -38,18 +35,16 @@ var (
 // Recorder handles recording of serial port interactions
 type Recorder struct {
 	logger   *log.Logger
-	filename string
-	requests map[string]emulatorConfig.RequestResponse
+	requests emulatorConfig.Mappings
 	reqChan  chan []byte
 	resChan  chan []byte
 }
 
 // NewRecorder creates a new Recorder instance
-func NewRecorder(logger *log.Logger, filename string) *Recorder {
+func NewRecorder(logger *log.Logger) *Recorder {
 	return &Recorder{
 		logger:   logger,
-		filename: filename,
-		requests: make(map[string]emulatorConfig.RequestResponse),
+		requests: make(emulatorConfig.Mappings, 0),
 		reqChan:  make(chan []byte),
 		resChan:  make(chan []byte),
 	}
@@ -65,74 +60,41 @@ func (r *Recorder) RecordResponse(res []byte) {
 	r.resChan <- res
 }
 
-func (r *Recorder) writeRecording() error {
-	if r.filename == "" {
-		r.logger.Println("No recording filename specified, skipping write")
-		return nil
-	}
-
-	r.logger.Printf("Writing recording to %s", r.filename)
-
-	emuConfig := emulatorConfig.EmulatorConfig{
-		Mappings: make([]emulatorConfig.RequestResponse, 0, len(r.requests)),
-	}
-
-	for key := range r.requests {
-		emuConfig.Mappings = append(emuConfig.Mappings, r.requests[key])
-	}
-
-	data, err := yaml.Marshal(emuConfig)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(r.filename, data, 0600); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
-	}
-
-	r.logger.Printf("Recording written to %s", r.filename)
-
-	return nil
+func (r *Recorder) GetRecording() emulatorConfig.Mappings {
+	return r.requests
 }
 
-func (r *Recorder) recordLoop(ctx context.Context) {
+// Run the Recorder
+// The Recorder will run until the context is cancelled
+func (r *Recorder) Run(ctx context.Context) {
+	var currentRequest string
 	var currentResponse *emulatorConfig.ResponseOption
 	var currentRequestTime time.Time
+
+	defer (func() {
+		// Ensure that we finalize the last recording if needed
+		if currentRequest != "" && currentResponse != nil {
+			r.logger.Printf("Finalizing recording for request: %s", currentRequest)
+			r.requests.AddResponse(currentRequest, *currentResponse)
+		}
+	})()
 
 	for {
 		select {
 		case <-ctx.Done():
 			r.logger.Println("Recorder stopping")
-
-			if err := r.writeRecording(); err != nil {
-				r.logger.Printf("Error writing recording: %v", err)
-			}
-
 			return
 		case req := <-r.reqChan:
 			r.logger.Printf("Received request to record: %s", req)
-			currentRequestTime = time.Now()
 
-			reqStr := string(req)
-
-			if _, exists := r.requests[reqStr]; !exists {
-				r.requests[reqStr] = emulatorConfig.RequestResponse{
-					Request: reqStr,
-					Responses: []emulatorConfig.ResponseOption{
-						{Chunks: []emulatorConfig.ResponseChunk{}},
-					},
-				}
-			} else {
-				// Append a new response option for subsequent responses to the same request
-				r.requests[reqStr] = emulatorConfig.RequestResponse{
-					Request: reqStr,
-					Responses: append(r.requests[reqStr].Responses, emulatorConfig.ResponseOption{
-						Chunks: []emulatorConfig.ResponseChunk{},
-					}),
-				}
+			if currentRequest != "" && currentResponse != nil {
+				r.logger.Printf("Saving recording for previous request: %s", currentRequest)
+				r.requests.AddResponse(currentRequest, *currentResponse)
 			}
 
-			currentResponse = &r.requests[reqStr].Responses[len(r.requests[reqStr].Responses)-1]
+			currentRequestTime = time.Now()
+			currentRequest = string(req)
+			currentResponse = new(emulatorConfig.ResponseOption)
 		case res := <-r.resChan:
 			if currentResponse == nil {
 				r.logger.Printf("Warning: %v: %s", ErrResponseWithoutRequest, res)
@@ -152,13 +114,4 @@ func (r *Recorder) recordLoop(ctx context.Context) {
 			currentRequestTime = time.Now()
 		}
 	}
-}
-
-// Start begins the recording process
-func (r *Recorder) Start(ctx context.Context) {
-	r.logger.Println("Recorder started")
-
-	go func() {
-		r.recordLoop(ctx)
-	}()
 }
