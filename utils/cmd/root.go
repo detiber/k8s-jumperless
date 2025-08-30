@@ -119,7 +119,7 @@ func newRootCommand(logger *log.Logger) *rootCommand {
 	// Add subcommands
 	c.cmd.AddCommand(generator.NewGeneratorCommand(v, rootLogger))
 	c.cmd.AddCommand(emulator.NewEmulatorCommand(v, rootLogger))
-	c.cmd.AddCommand(proxy.NewProxyCommand(v, rootLogger))
+	c.cmd.AddCommand(proxy.NewProxyCommand(v, rootLogger, defaultConfigFile, cfgConfig))
 
 	return c
 }

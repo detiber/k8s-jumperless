@@ -18,8 +18,10 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,7 +31,8 @@ import (
 	"github.com/detiber/k8s-jumperless/utils/internal/proxy/config"
 )
 
-func NewProxyCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Command {
+func NewProxyCommand(v *viper.Viper, parentLogger *log.Logger,
+	defaultConfigFile, configFileFlagName string) *cobra.Command {
 	logger := log.New(parentLogger.Writer(), parentLogger.Prefix()+" [proxy]", parentLogger.Flags())
 
 	cmd := &cobra.Command{
@@ -38,7 +41,21 @@ func NewProxyCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Command {
 		Long:  `A proxy sends configured commands to a Jumperless device over a serial port`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
-			return runProxy(ctx, v, logger)
+
+			configFile, err := findConfigFile(cmd, v, configFileFlagName, defaultConfigFile)
+			if err != nil {
+				return fmt.Errorf("failed to determine config file: %w", err)
+			}
+
+			proxyConfig := config.NewFromViper(v)
+			emuConfig := emulatorConfig.NewFromViper(v)
+
+			recording, err := runProxy(ctx, logger, proxyConfig)
+			if err != nil {
+				return err
+			}
+
+			return saveRecording(logger, proxyConfig, emuConfig, configFile, recording)
 		},
 	}
 
@@ -63,40 +80,71 @@ func NewProxyCommand(v *viper.Viper, parentLogger *log.Logger) *cobra.Command {
 	return cmd
 }
 
-func runProxy(ctx context.Context, v *viper.Viper, logger *log.Logger) error {
-	proxyConfig := config.NewFromViper(v)
-
+func runProxy(ctx context.Context, logger *log.Logger,
+	proxyConfig *config.ProxyConfig) (emulatorConfig.Mappings, error) {
 	logger.Printf("Starting Jumperless proxy with config: %+v", proxyConfig)
 
 	// Create proxy
 	p, err := proxy.New(proxyConfig, logger)
 	if err != nil {
-		return fmt.Errorf("failed to create proxy: %w", err)
+		return nil, fmt.Errorf("failed to create proxy: %w", err)
 	}
 
 	recording, err := p.Run(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to run proxy: %w", err)
+		return nil, fmt.Errorf("failed to run proxy: %w", err)
 	}
 
-	// Check if we have any recorded requests/responses
+	logger.Printf("proxy stopped")
+
+	return recording, nil
+}
+
+func findConfigFile(cmd *cobra.Command, v *viper.Viper, configFileFlagName, defaultConfigFile string) (string, error) {
+	// Try to get config file from viper
+	configFile := v.ConfigFileUsed()
+	if configFile != "" {
+		return configFile, nil
+	}
+
+	configFile, err := cmd.Flags().GetString(configFileFlagName)
+	if err != nil {
+		return "", fmt.Errorf("failed to get config file from flag: %w", err)
+	}
+
+	if configFile != "" {
+		return configFile, nil
+	}
+
+	// Use default config file
+	return defaultConfigFile, nil
+}
+
+func saveRecording(logger *log.Logger, proxyConfig *config.ProxyConfig,
+	emuConfig *emulatorConfig.EmulatorConfig, configFile string,
+	recording emulatorConfig.Mappings) error {
 	if len(recording) == 0 {
 		logger.Printf("No requests/responses recorded")
 		return nil
 	}
 
 	// Save recording
-	emuConfig := emulatorConfig.NewFromViper(v)
-	if len(emuConfig.Mappings) != 0 || proxyConfig.Overwrite {
+	switch {
+	case proxyConfig.Overwrite:
 		logger.Printf(
 			"Overwriting existing emulator mappings and saving %d recorded request/response pairs to emulator config",
 			len(recording),
 		)
 
 		emuConfig.Mappings = recording
+	case len(emuConfig.Mappings) == 0:
+		logger.Printf(
+			"No existing emulator mappings, saving %d recorded request/response pairs to emulator config",
+			len(recording),
+		)
 
-		// TODO: save config
-	} else {
+		emuConfig.Mappings = recording
+	default:
 		logger.Printf(
 			"Existing emulator mappings, appending %d recorded request/response pairs to emulator config",
 			len(recording),
@@ -105,12 +153,25 @@ func runProxy(ctx context.Context, v *viper.Viper, logger *log.Logger) error {
 		for _, r := range recording {
 			emuConfig.Mappings.AddResponse(r.Request, r.Responses...)
 		}
-
-		// TODO: save config
 	}
 
-	logger.Printf("Recorded %d request/response pairs", len(recording))
+	// We only want to update the mappings in the config file, so create a new viper instance
+	// to avoid writing other config values
+	v := viper.New()
+	v.SetConfigFile(configFile)
+	v.SetConfigType("yaml")
 
-	logger.Printf("proxy stopped")
+	var viperNotFoundErr viper.ConfigFileNotFoundError
+	if err := v.ReadInConfig(); err != nil && !errors.As(err, &viperNotFoundErr) && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("error reading config file: %w", err)
+	}
+
+	v.Set("emulator.mappings", emuConfig.Mappings)
+	if err := v.WriteConfigAs(configFile); err != nil {
+		return fmt.Errorf("failed to write updated config file: %w", err)
+	}
+
+	logger.Printf("Saved updated emulator mappings to config file: %s", configFile)
+
 	return nil
 }
