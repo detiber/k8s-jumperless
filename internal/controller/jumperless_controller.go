@@ -145,6 +145,12 @@ func (r *JumperlessReconciler) patchStatus(ctx context.Context, instance *jumper
 	u := &unstructured.Unstructured{}
 	u.SetUnstructuredContent(uResource)
 
+	// Patch the status using server-side apply
+	// Use ForceOwnership to ensure the controller can update the status
+	// Use FieldOwner to set the field owner to the controller
+	// This is using the deprecated client.Apply option, since controller-runtime v0.22
+	// does not yet support native SSA for subresources: https://github.com/kubernetes-sigs/controller-runtime/issues/3183
+	//nolint:staticcheck
 	if err := r.Status().Patch(ctx, u, client.Apply, client.ForceOwnership, client.FieldOwner("k8s-jumperless")); err != nil {
 		log.Error(err, "unable to patch Jumperless status")
 		return fmt.Errorf("unable to patch Jumperless status: %w", err)
