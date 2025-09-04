@@ -31,7 +31,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
-	"github.com/detiber/k8s-jumperless/utils/emulator/emulator/config"
+	"github.com/detiber/k8s-jumperless/utils/internal/emulator/config"
 )
 
 var ErrNoResponsesConfigured = errors.New("no responses configured")
